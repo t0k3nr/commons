@@ -38,8 +38,10 @@ jobs:
         distribution: temurin
         cache: 'maven'
         
-    - name: Build
-      run: |
+      - name: Build
+        run: |
           echo ${MVN_SETTINGS} > /tmp/settings.xml
+          echo -n "$GPG_KEY" | base64 --decode | gpg --import
           mvn deploy -s /tmp/settings.xml
           rm -f /tmp/settings.xml
+          rm -rf /home/runner/.gpg
