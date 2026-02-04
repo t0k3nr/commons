@@ -21,6 +21,16 @@ jobs:
         server-username: MAVEN_USERNAME
         server-password: MAVEN_PASSWORD
 
+    - name: Check GPG_KEY secret
+      run: |
+        if [ -z "${{ secrets.GPG_KEY }}" ]; then
+          echo "ERROR: GPG_KEY secret is empty or not accessible"
+          exit 1
+        fi
+        echo "GPG_KEY secret length: ${#GPG_KEY_VALUE} characters"
+      env:
+        GPG_KEY_VALUE: ${{ secrets.GPG_KEY }}
+
     - name: Import GPG key
       run: |
         echo -n "${{ secrets.GPG_KEY }}" | base64 --decode | gpg --batch --import
