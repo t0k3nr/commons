@@ -3037,7 +3037,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 						}
 
 					}  else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -3344,7 +3344,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 
 
 					} else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -4213,7 +4213,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 						}
 
 					}  else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -4520,7 +4520,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 
 
 					} else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -5996,7 +5996,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 						}
 
 					}  else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -6176,7 +6176,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 
 
 					} else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -6720,7 +6720,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 						}
 
 					}  else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
@@ -7030,7 +7030,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 
 
 					} else {
-						logger.info("divergence: " + currentSg + " ignoring as too small ");
+						//logger.info("divergence: " + currentSg + " ignoring as too small ");
 
 						foundDiv4 = true;
 					}
