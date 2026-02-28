@@ -3,7 +3,7 @@
   "release-type": "maven",
   "packages": {
     ".": {
-      "snapshot": true
+      "snapshot": false
     }
   }
 }
