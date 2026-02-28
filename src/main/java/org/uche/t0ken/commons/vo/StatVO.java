@@ -351,14 +351,16 @@ public class StatVO implements Serializable {
 			}
 		}
 		
-		if (wt.signum()>=0) {
-			if ((previousLowWasOver != null) && previousLowWasOver) {
-				res.append(" POS");
-			}
-			
-		} else {
-			if ((previousHighWasOver != null) && previousHighWasOver) {
-				res.append(" POB");
+		if (wt != null) {
+			if (wt.signum()>=0) {
+				if ((previousLowWasOver != null) && previousLowWasOver) {
+					res.append(" POS");
+				}
+				
+			} else {
+				if ((previousHighWasOver != null) && previousHighWasOver) {
+					res.append(" POB");
+				}
 			}
 		}
 		
@@ -437,14 +439,16 @@ public class StatVO implements Serializable {
 				*/
 			}
 		}
-		if (wt.signum()>=0) {
-			if ((previousLowWasOver != null) && previousLowWasOver) {
-				res.append(" POS");
-			}
-			
-		} else {
-			if ((previousHighWasOver != null) && previousHighWasOver) {
-				res.append(" POB");
+		if (wt != null) {
+			if (wt.signum()>=0) {
+				if ((previousLowWasOver != null) && previousLowWasOver) {
+					res.append(" POS");
+				}
+				
+			} else {
+				if ((previousHighWasOver != null) && previousHighWasOver) {
+					res.append(" POB");
+				}
 			}
 		}
 		return res.toString();
