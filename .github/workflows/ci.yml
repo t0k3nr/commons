@@ -2,11 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -16,29 +18,7 @@ jobs:
       with:
         java-version: 21
         distribution: temurin
-        cache: 'maven'
-        server-id: central
-        server-username: MAVEN_USERNAME
-        server-password: MAVEN_PASSWORD
+        cache: maven
 
-    - name: Check GPG_KEY secret
-      run: |
-        if [ -z "${{ secrets.GPG_KEY }}" ]; then
-          echo "ERROR: GPG_KEY secret is empty or not accessible"
-          exit 1
-        fi
-        echo "GPG_KEY secret length: ${#GPG_KEY_VALUE} characters"
-      env:
-        GPG_KEY_VALUE: ${{ secrets.GPG_KEY }}
-
-    - name: Import GPG key
-      run: |
-        echo -n "${{ secrets.GPG_KEY }}" | base64 --decode | gpg --batch --import
-        echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-        gpgconf --reload gpg-agent
-
-    - name: Build and Publish to Maven Central
-      env:
-        MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-        MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
-      run: mvn -B deploy
+    - name: Build and Test
+      run: mvn -B verify
