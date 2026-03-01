@@ -1,9 +1,12 @@
-name: Release Please
+name: Release
 
 on:
   push:
     branches:
       - main
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,10 +15,8 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - name: Release PR
         id: release
@@ -26,8 +27,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   maven-central-publish:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -60,4 +60,4 @@ jobs:
         run: |
           echo "Maven Central Release" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- org.uche.t0k3nr:commons:${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- org.uche.t0k3nr:commons:${{ github.event.release.tag_name || 'manual' }}" >> $GITHUB_STEP_SUMMARY
