@@ -365,7 +365,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		if (combinedAlignments.isEmpty()) return;
 
 		StringBuilder buf = new StringBuilder();
-		buf.append("\nSG: ").append(side).append(" SIDE");
+		String sideEmoji = side.equals("BUY") ? "\uD83D\uDFE2\uD83D\uDFE2\uD83D\uDFE2" : "\uD83D\uDD34\uD83D\uDD34\uD83D\uDD34";
+		buf.append("\n\nSG: ").append(sideEmoji).append(" ").append(side).append(" SIDE");
 		if (hasEnabler) buf.append(" - ENABLER");
 
 		List<ValidEntry> prevLA = null;
