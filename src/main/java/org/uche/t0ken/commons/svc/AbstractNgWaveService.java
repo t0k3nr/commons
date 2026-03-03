@@ -145,9 +145,10 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		return Boolean.TRUE.equals(mv.getIncreasingLows()) || mv.wt1Below(WAVETREND_OS);
 	}
 
-	// D4OVER BUY: SgMove is AN, BN, XN, RN AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold
+	// D4OVER BUY: SgMove is AN, BN, XN, RN AND increasingLows AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold
 	private boolean isValidBuyD4OVER(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
 		if (!mv.isAnBn(RN_XN_THRESHOLD) && !mv.isRnXn(RN_XN_THRESHOLD)) return false;
+		if (!Boolean.TRUE.equals(mv.getIncreasingLows())) return false;
 		return hasSmallerGranularityBelow(sg, moves, WAVETREND_OS);
 	}
 
@@ -169,9 +170,10 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		return Boolean.TRUE.equals(mv.getDecreasingHighs()) || mv.wt1Above(WAVETREND_OB);
 	}
 
-	// D4OVER SELL: SgMove is AP, BP, XP, RP AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought
+	// D4OVER SELL: SgMove is AP, BP, XP, RP AND decreasingHighs AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought
 	private boolean isValidSellD4OVER(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
 		if (!mv.isApBp(RP_XP_THRESHOLD) && !mv.isRpXp(RP_XP_THRESHOLD)) return false;
+		if (!Boolean.TRUE.equals(mv.getDecreasingHighs())) return false;
 		return hasSmallerGranularityAbove(sg, moves, WAVETREND_OB);
 	}
 
