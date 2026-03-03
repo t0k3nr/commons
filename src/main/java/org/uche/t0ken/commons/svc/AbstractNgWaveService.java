@@ -57,6 +57,11 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
 			NavigableMap<StatGranularity, StatVO> moves, boolean live, Boolean clue) {
 
+		return null;
+	}
+
+	public void logAlignments(NavigableMap<StatGranularity, StatVO> moves) {
+
 		// Step 1: Determine valid granularities for each side (ordered desc)
 		List<ValidEntry> validBuy = new ArrayList<>();
 		List<ValidEntry> validSell = new ArrayList<>();
@@ -90,10 +95,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		List<List<List<ValidEntry>>> buyEnabledAlignments = filterWithEnabler(buyCombinedAlignments);
 		List<List<List<ValidEntry>>> sellEnabledAlignments = filterWithEnabler(sellCombinedAlignments);
 
-		logAlignments("BUY", buyCombinedAlignments, !buyEnabledAlignments.isEmpty());
-		logAlignments("SELL", sellCombinedAlignments, !sellEnabledAlignments.isEmpty());
-
-		return null;
+		logAlignmentSide("BUY", buyCombinedAlignments, !buyEnabledAlignments.isEmpty());
+		logAlignmentSide("SELL", sellCombinedAlignments, !sellEnabledAlignments.isEmpty());
 	}
 
 	// ========== Validity type resolution ==========
@@ -355,7 +358,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	private static final String DOUBLE_FORMAT = "%,10.2f";
 
-	private void logAlignments(String side,
+	private void logAlignmentSide(String side,
 			List<List<List<ValidEntry>>> combinedAlignments,
 			boolean hasEnabler) {
 
