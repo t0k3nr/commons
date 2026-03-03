@@ -162,7 +162,7 @@ public class AbstractWtService {
 						//logger.info(s.getSg() + ": increasing: got previous low: previousLowWt1: " + previousLowWt1 + " previousLowLowestWt: " + previousLowLowestWt + " @mktdata" + previousLow.getTs());
 						
 						
-						if ((previousLowWt1 != null) && (previousLowLowestWt != null)) {
+						if ((previousLowWt1 != null) && (previousLowLowestWt != null) && (BUY_WT_THRESHOLD != null) && (OVERSOLD_THRESHOLD != null)) {
 							if ((previousLowLowestWt.compareTo(BUY_WT_THRESHOLD) <0) && (previousLowWt1.compareTo(OVERSOLD_THRESHOLD)<=0)) {
 								overLow = true;
 								//logger.info(s.getSg() + ": increasing: got previous low: previousLowWt1: " + previousLowWt1 + " previousLowLowestWt: " + previousLowLowestWt + " @mktdata" + previousLow.getTs() + " overlow");
@@ -187,7 +187,7 @@ public class AbstractWtService {
 						BigDecimal previousHighHighestWt = previousHigh.getHighestWt();
 						//logger.info(s.getSg() + ": decreasing: got previous high: previousHighWt1: " + previousHighWt1 + " previousHighHighestWt: " + previousHighHighestWt + " @mktdata" + previousHigh.getTs());
 
-						if ((previousHighWt1 != null) && (previousHighHighestWt != null)) {
+						if ((previousHighWt1 != null) && (previousHighHighestWt != null) && (SELL_WT_THRESHOLD != null) && (OVERBOUGHT_THRESHOLD != null)) {
 							if ((previousHighHighestWt.compareTo(SELL_WT_THRESHOLD) >0) && (previousHighWt1.compareTo(OVERBOUGHT_THRESHOLD)>=0)) {
 								overHigh = true;
 								//logger.info(s.getSg() + ": decreasing: got previous high: previousHighWt1: " + previousHighWt1 + " previousHighHighestWt: " + previousHighHighestWt + " @mktdata" + previousHigh.getTs() + " overhigh");
