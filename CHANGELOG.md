@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0](https://github.com/t0k3nr/commons/compare/v1.14.0...v1.15.0) (2026-03-03)
+
+
+### Features
+
+* add AbstractNgWaveService with WaveTrend alignment signal detection ([#19](https://github.com/t0k3nr/commons/issues/19)) ([c3199aa](https://github.com/t0k3nr/commons/commit/c3199aa5f947b78e81edcdb0869c58823cc4da38))
+
+
+### Bug Fixes
+
+* align pom.xml version with release-please manifest (1.14.0) ([#17](https://github.com/t0k3nr/commons/issues/17)) ([f138bf2](https://github.com/t0k3nr/commons/commit/f138bf2935e272e876e4a53de2aa55927d8392b8))
+
 ## [1.14.0](https://github.com/t0k3nr/commons/compare/v1.13.1...v1.14.0) (2026-03-01)
 
 
