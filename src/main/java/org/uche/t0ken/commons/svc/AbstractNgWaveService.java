@@ -330,8 +330,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	public void setWAVETREND_OS(BigDecimal v) { this.WAVETREND_OS = v; }
 	public void setWAVETREND_OB(BigDecimal v) { this.WAVETREND_OB = v; }
-	public void setRP_XP_THRESHOLD(BigDecimal v) { this.RP_XP_THRESHOLD = v; }
-	public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; }
+	@Override public void setRP_XP_THRESHOLD(BigDecimal v) { this.RP_XP_THRESHOLD = v; super.setRP_XP_THRESHOLD(v); }
+	@Override public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; super.setRN_XN_THRESHOLD(v); }
 	public void setD4OVER_MIN_MUL(double v) { this.D4OVER_MIN_MUL = v; }
 	public void setD4OVER_MAX_MUL(double v) { this.D4OVER_MAX_MUL = v; }
 	public void setSTALLED_P_THRESHOLD(BigDecimal v) { this.STALLED_P_THRESHOLD = v; }

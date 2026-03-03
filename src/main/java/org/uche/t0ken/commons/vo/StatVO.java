@@ -956,27 +956,27 @@ public class StatVO implements Serializable {
 	}
 	
 	public boolean wt1Above(BigDecimal threshold) {
-		return (wt1.compareTo(threshold) >= 0);
+		return (wt1 != null) && (threshold != null) && (wt1.compareTo(threshold) >= 0);
 	}
 	
 	public boolean wt1Below(BigDecimal threshold) {
-		return (wt1.compareTo(threshold) <= 0);
+		return (wt1 != null) && (threshold != null) && (wt1.compareTo(threshold) <= 0);
 	}
 	
 	public boolean wtAbove(BigDecimal threshold) {
-		return (wt.compareTo(threshold) >= 0);
+		return (wt != null) && (threshold != null) && (wt.compareTo(threshold) >= 0);
 	}
 	
 	public boolean wtBelow(BigDecimal threshold) {
-		return (wt.compareTo(threshold) <= 0);
+		return (wt != null) && (threshold != null) && (wt.compareTo(threshold) <= 0);
 	}
 	
 	public boolean highestWtAbove(BigDecimal threshold) {
-		return (highestWt.compareTo(threshold) >= 0);
+		return (highestWt != null) && (threshold != null) && (highestWt.compareTo(threshold) >= 0);
 	}
 	
 	public boolean highestWtBelow(BigDecimal threshold) {
-		return (highestWt.compareTo(threshold) <= 0);
+		return (highestWt != null) && (threshold != null) && (highestWt.compareTo(threshold) <= 0);
 	}
 	
 	public boolean isOverSoldDiverging(BigDecimal overSoldThreshold) {
