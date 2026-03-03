@@ -1047,7 +1047,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 				}
 			} else if (!buyOverBoughtSignals.get(currentSg)) {
 				// maintain
-				if (currentVO.getHighestWt().compareTo(RN_XN_THRESHOLD)<=0) {
+				if ((currentVO.getHighestWt() != null) && (RN_XN_THRESHOLD != null) && (currentVO.getHighestWt().compareTo(RN_XN_THRESHOLD)<=0)) {
 					buyOverBoughtSignals.put(currentSg, true);
 				} else if (currentVO.wt1Above(WT1_OVERBOUGHT_THRESHOLD)) {
 					//buyOverBoughtSignals.put(currentSg, false);
@@ -1075,7 +1075,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 				}
 			} else if (!sellOverSoldSignals.get(currentSg)) {
 				// maintain
-				if (currentVO.getHighestWt().compareTo(RP_XP_THRESHOLD)>=0) {
+				if ((currentVO.getHighestWt() != null) && (RP_XP_THRESHOLD != null) && (currentVO.getHighestWt().compareTo(RP_XP_THRESHOLD)>=0)) {
 					sellOverSoldSignals.put(currentSg, true);
 				} else if (currentVO.wt1Below(WT1_OVERSOLD_THRESHOLD)) {
 					//sellOverSoldSignals.put(currentSg, false);
