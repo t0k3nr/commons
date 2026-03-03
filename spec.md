@@ -29,7 +29,7 @@ For BUY side a granularity is considered valid if:
 
 - LHHL: its SgMove is RN or XN AND (current wt low is increasing: higher than previous low (increasingLows is true) OR its wt1 is oversold: lower than WAVETREND_OS1)
 
-- D4OVER: its SgMove is AN, BN, XN, RN AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold: lower than WAVETREND_OS1
+- D4OVER: its SgMove is AN, BN, XN, RN AND current wt low is increasing: higher than previous low (increasingLows is true) AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold: lower than WAVETREND_OS1
 
 - STLD: its SgMove is SN, SP, ST and wt1 <= STALLED_N_THRESHOLD
 
@@ -41,7 +41,7 @@ For SELL side a granularity is considered valid if:
 
 - LHHL: its SgMove is RP or XP AND (current wt high is decreasing: lower than previous high (decreasingHighs is true) OR its wt1 is overbought: higher than WAVETREND_OB1)
 
-- D4OVER: its SgMove is AP, BP, XP, RP AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought: higher than WAVETREND_OB1
+- D4OVER: its SgMove is AP, BP, XP, RP AND current wt high is decreasing: lower than previous high (decreasingHighs is true) AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought: higher than WAVETREND_OB1
 
 - STLD: its SgMove is SN, SP, ST and wt1 >= STALLED_P_THRESHOLD
 
