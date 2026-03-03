@@ -972,11 +972,11 @@ public class StatVO implements Serializable {
 	}
 	
 	public boolean highestWtAbove(BigDecimal threshold) {
-		return (highestWt.compareTo(threshold) >= 0);
+		return (highestWt != null) && (highestWt.compareTo(threshold) >= 0);
 	}
 	
 	public boolean highestWtBelow(BigDecimal threshold) {
-		return (highestWt.compareTo(threshold) <= 0);
+		return (highestWt != null) && (highestWt.compareTo(threshold) <= 0);
 	}
 	
 	public boolean isOverSoldDiverging(BigDecimal overSoldThreshold) {
