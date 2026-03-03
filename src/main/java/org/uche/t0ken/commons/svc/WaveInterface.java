@@ -11,5 +11,6 @@ public interface WaveInterface {
 	public TimeInterface getTimeService();
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
 			NavigableMap<StatGranularity, StatVO> moves, boolean live, Boolean clue);
+	
 }
 
