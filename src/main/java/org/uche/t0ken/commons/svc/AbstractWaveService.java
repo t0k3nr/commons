@@ -1339,7 +1339,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 										//logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 decreasing highs, false");
 										return false;
 									} else {
-										logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 increasing highs");
+										//logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 increasing highs");
 										
 									}
 									return true;
@@ -1356,7 +1356,7 @@ public abstract class AbstractWaveService implements WaveInterface {
 										//logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 decreasing highs, false");
 										return false;
 									} else {
-										logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 increasing highs");
+										//logger.info("_signal_is_divergent " + vo.getSg() + " leftPercent.compareTo(Indicators.ZERO_DOT_TWO)>0 increasing highs");
 										
 									}
 									
@@ -1374,28 +1374,28 @@ public abstract class AbstractWaveService implements WaveInterface {
 								
 								if ((vo.getWt().add(vo.getDiff()).compareTo(Indicators.EIGHT)>=0) 
 										&& (vo.getDiff().compareTo(Indicators.SIX)>=0)) {
-									logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.EIGHT)>=0");
+									//logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.EIGHT)>=0");
 									return true;
 								}
 								if ((vo.wt1Above(Indicators.THIRTY_FIVE) && (vo.getWt().add(vo.getDiff()).compareTo(Indicators.SEVEN)>=0) 
 										&& (vo.getDiff().compareTo(Indicators.FIVE)>=0))) {
-									logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.SEVEN)>=0");
+									//logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.SEVEN)>=0");
 
 									return true;
 								}
 								if ((vo.wt1Above(Indicators.FOURTY) && (vo.getWt().add(vo.getDiff()).compareTo(Indicators.SIX)>=0) 
 										&& (vo.getDiff().compareTo(Indicators.FOUR)>=0))) {
-									logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.SIX)>=0");
+									//logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.SIX)>=0");
 									return true;
 								}
 								if ((vo.wt1Above(Indicators.FOURTY_FIVE) && (vo.getWt().add(vo.getDiff()).compareTo(Indicators.FIVE)>=0) 
 										&& (vo.getDiff().compareTo(Indicators.THREE)>=0))) {
-									logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.FIVE)>=0");
+									//logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.FIVE)>=0");
 									return true;
 								}
 								if ((vo.wt1Above(Indicators.FIFTY) && (vo.getWt().add(vo.getDiff()).compareTo(Indicators.FOUR)>=0) 
 										&& (vo.getDiff().compareTo(Indicators.TWO)>=0))) {
-									logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.FOUR)>=0");
+									//logger.info("_signal_is_divergent " + vo.getSg() + " vo.getDiff().compareTo(Indicators.FOUR)>=0");
 									return true;
 								}
 								
