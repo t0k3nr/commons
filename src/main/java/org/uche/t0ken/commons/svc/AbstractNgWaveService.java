@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 import org.uche.t0ken.commons.enums.StatGranularity;
 import org.uche.t0ken.commons.vo.StatVO;
 
-public abstract class AbstractNgWaveService implements WaveInterface {
+public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	private final static Logger logger = Logger.getLogger("AbstractNgWaveService");
 
@@ -325,6 +325,21 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		}
 		return result;
 	}
+
+	// ========== Setters ==========
+
+	public void setWAVETREND_OS(BigDecimal v) { this.WAVETREND_OS = v; }
+	public void setWAVETREND_OB(BigDecimal v) { this.WAVETREND_OB = v; }
+	public void setRP_XP_THRESHOLD(BigDecimal v) { this.RP_XP_THRESHOLD = v; }
+	public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; }
+	public void setD4OVER_MIN_MUL(double v) { this.D4OVER_MIN_MUL = v; }
+	public void setD4OVER_MAX_MUL(double v) { this.D4OVER_MAX_MUL = v; }
+	public void setSTALLED_P_THRESHOLD(BigDecimal v) { this.STALLED_P_THRESHOLD = v; }
+	public void setSTALLED_N_THRESHOLD(BigDecimal v) { this.STALLED_N_THRESHOLD = v; }
+	public void setLOCAL_ALIGNMENT_RATIO(double v) { this.LOCAL_ALIGNMENT_RATIO = v; }
+	public void setCOMBINED_ALIGNMENT_RATIO(double v) { this.COMBINED_ALIGNMENT_RATIO = v; }
+	public void setGRANULARITY_FROM(StatGranularity v) { this.GRANULARITY_FROM = v; }
+	public void setGRANULARITY_UNTIL(StatGranularity v) { this.GRANULARITY_UNTIL = v; }
 
 	// ========== Alignment metrics ==========
 
