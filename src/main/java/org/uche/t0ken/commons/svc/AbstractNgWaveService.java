@@ -102,17 +102,9 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	// ========== Validity type resolution ==========
 
 	private ValidityType getValidityForBuy(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
-		boolean oversold = mv.getWt1() != null && mv.wt1Below(WAVETREND_OS);
-
-		boolean lhhlValid = isValidBuyLHHL(mv);
-		boolean d4overValid = isValidBuyD4OVER(sg, mv, moves);
-
-		if (lhhlValid || d4overValid) {
-			if (oversold) return ValidityType.OVER;
-			if (d4overValid) return ValidityType.D4OVER;
-			return ValidityType.LHHL;
-		}
-
+		if (isValidBuyD4OVER(sg, mv, moves)) return ValidityType.D4OVER;
+		if (isValidBuyLHHL(mv)) return ValidityType.LHHL;
+		if (isValidBuyOVER(mv)) return ValidityType.OVER;
 		if (isValidBuySTLD(mv)) return ValidityType.STLD;
 		if (isValidBuySTLDLHHL(mv)) return ValidityType.STLDLH;
 
@@ -120,17 +112,9 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	}
 
 	private ValidityType getValidityForSell(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
-		boolean overbought = mv.getWt1() != null && mv.wt1Above(WAVETREND_OB);
-
-		boolean lhhlValid = isValidSellLHHL(mv);
-		boolean d4overValid = isValidSellD4OVER(sg, mv, moves);
-
-		if (lhhlValid || d4overValid) {
-			if (overbought) return ValidityType.OVER;
-			if (d4overValid) return ValidityType.D4OVER;
-			return ValidityType.LHHL;
-		}
-
+		if (isValidSellD4OVER(sg, mv, moves)) return ValidityType.D4OVER;
+		if (isValidSellLHHL(mv)) return ValidityType.LHHL;
+		if (isValidSellOVER(mv)) return ValidityType.OVER;
 		if (isValidSellSTLD(mv)) return ValidityType.STLD;
 		if (isValidSellSTLDLHHL(mv)) return ValidityType.STLDLH;
 
@@ -139,10 +123,15 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	// ========== Validity checks ==========
 
-	// LHHL BUY: SgMove is RN or XN AND (increasingLows OR wt1 < WAVETREND_OS)
+	// LHHL BUY: SgMove is RN or XN AND increasingLows
 	private boolean isValidBuyLHHL(StatVO mv) {
 		if (!mv.isRnXn(RN_XN_THRESHOLD)) return false;
-		return Boolean.TRUE.equals(mv.getIncreasingLows()) || mv.wt1Below(WAVETREND_OS);
+		return Boolean.TRUE.equals(mv.getIncreasingLows());
+	}
+
+	// OVER BUY: wt1 is oversold (lower than WAVETREND_OS)
+	private boolean isValidBuyOVER(StatVO mv) {
+		return mv.getWt1() != null && mv.wt1Below(WAVETREND_OS);
 	}
 
 	// D4OVER BUY: SgMove is AN, BN, XN, RN AND increasingLows AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold
@@ -164,10 +153,15 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		return Boolean.TRUE.equals(mv.getIncreasingLows());
 	}
 
-	// LHHL SELL: SgMove is RP or XP AND (decreasingHighs OR wt1 > WAVETREND_OB)
+	// LHHL SELL: SgMove is RP or XP AND decreasingHighs
 	private boolean isValidSellLHHL(StatVO mv) {
 		if (!mv.isRpXp(RP_XP_THRESHOLD)) return false;
-		return Boolean.TRUE.equals(mv.getDecreasingHighs()) || mv.wt1Above(WAVETREND_OB);
+		return Boolean.TRUE.equals(mv.getDecreasingHighs());
+	}
+
+	// OVER SELL: wt1 is overbought (higher than WAVETREND_OB)
+	private boolean isValidSellOVER(StatVO mv) {
+		return mv.getWt1() != null && mv.wt1Above(WAVETREND_OB);
 	}
 
 	// D4OVER SELL: SgMove is AP, BP, XP, RP AND decreasingHighs AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought
