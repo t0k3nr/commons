@@ -53,14 +53,17 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		}
 	}
 
+	// ========== Memory Persistence of alignments ==========
+
+	private final Object alignmentLock = new Object();
+	private List<List<List<ValidEntry>>> persistedBuyCombinedAlignments = new ArrayList<>();
+	private List<List<List<ValidEntry>>> persistedSellCombinedAlignments = new ArrayList<>();
+	private boolean persistedBuyHasEnabler = false;
+	private boolean persistedSellHasEnabler = false;
+
 	@Override
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
 			NavigableMap<StatGranularity, StatVO> moves, boolean live, Boolean clue) {
-
-		return null;
-	}
-
-	public void logAlignments(NavigableMap<StatGranularity, StatVO> moves) {
 
 		// Step 1: Determine valid granularities for each side (ordered desc)
 		List<ValidEntry> validBuy = new ArrayList<>();
@@ -88,15 +91,39 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		List<List<ValidEntry>> sellLocalAlignments = buildLocalAlignments(validSell);
 
 		// Step 3: Build Combined Alignments for each side (ordered desc)
-		List<List<List<ValidEntry>>> buyCombinedAlignments = buildCombinedAlignments(buyLocalAlignments);
-		List<List<List<ValidEntry>>> sellCombinedAlignments = buildCombinedAlignments(sellLocalAlignments);
+		List<List<List<ValidEntry>>> buyCombined = buildCombinedAlignments(buyLocalAlignments);
+		List<List<List<ValidEntry>>> sellCombined = buildCombinedAlignments(sellLocalAlignments);
 
 		// Step 4: Combined Alignments that include an Enabler Alignment
-		List<List<List<ValidEntry>>> buyEnabledAlignments = filterWithEnabler(buyCombinedAlignments);
-		List<List<List<ValidEntry>>> sellEnabledAlignments = filterWithEnabler(sellCombinedAlignments);
+		boolean buyHasEnabler = !filterWithEnabler(buyCombined).isEmpty();
+		boolean sellHasEnabler = !filterWithEnabler(sellCombined).isEmpty();
 
-		logAlignmentSide("BUY", buyCombinedAlignments, !buyEnabledAlignments.isEmpty());
-		logAlignmentSide("SELL", sellCombinedAlignments, !sellEnabledAlignments.isEmpty());
+		// Store as persistent variables (synchronized for concurrent access by logAlignments)
+		synchronized (alignmentLock) {
+			persistedBuyCombinedAlignments = buyCombined;
+			persistedSellCombinedAlignments = sellCombined;
+			persistedBuyHasEnabler = buyHasEnabler;
+			persistedSellHasEnabler = sellHasEnabler;
+		}
+
+		return null;
+	}
+
+	public void logAlignments() {
+		List<List<List<ValidEntry>>> buyCombined;
+		List<List<List<ValidEntry>>> sellCombined;
+		boolean buyHasEnabler;
+		boolean sellHasEnabler;
+
+		synchronized (alignmentLock) {
+			buyCombined = persistedBuyCombinedAlignments;
+			sellCombined = persistedSellCombinedAlignments;
+			buyHasEnabler = persistedBuyHasEnabler;
+			sellHasEnabler = persistedSellHasEnabler;
+		}
+
+		logAlignmentSide("BUY", buyCombined, buyHasEnabler);
+		logAlignmentSide("SELL", sellCombined, sellHasEnabler);
 	}
 
 	// ========== Validity type resolution ==========

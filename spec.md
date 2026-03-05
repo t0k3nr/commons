@@ -49,9 +49,13 @@ For SELL side a granularity is considered valid if:
 
 - STLDLHHL: its SgMove is SN, SP, ST and decreasingHighs
 
-## Selection of Aligned Signals
+## Memory Persistence of alignments
 
 When we have selected the valid signals of each side, we can now evaluate signal alignment.
+
+- The AbstractNgWaveService.inject method is always called synchronously, which means it is never called by various threads at the same time. This method is responsible of storing all alignments as persistent variables, and update them each time inject(...) is called. They must be synchronized to prevent concurrency issues, as other methods can access these variables. Inject build them, and each time it is called, replace them with the new evaluation to maintain them up-do-date.
+
+- The AbstractNgWaveService.logAlignments() method can be called independently to log the info using these memory persistent variables.
 
 ### Local Alignment
 
@@ -100,7 +104,7 @@ An Enabler Alignment is a Local Alignment whose lower granularity is below GRANU
 
 Example: if GRANULARITY_FROM is S60, a Local Alignment is an Enabler Alignment if its lower granularity is < durationOf(S60) * 3 which means S180.
 
-## Logging of Aligments
+### Logging of Aligments
 
 To produce line like "D36.3:AN wt:-15.7844706 highestWt:-15.8885586 wt1: 35.4532904 diff:-4.2789475 HH LL POB @2026-03-02T16:14:19.183337Z" use toMoveString() method of StatVO
 
