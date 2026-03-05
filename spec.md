@@ -136,3 +136,29 @@ D4OVER D9.6:RN wt:-6.7622419 highestWt:-20.8890015 wt1: -52.3222729 diff:2.85762
 -- Combined Alignment 2 - distance:    466,500
 -- Local Alignment - width:    2.35 - distance:    466,500 ⚠️️
   STLD M1.0:SN wt:-0.7167646 highestWt:-1.0904788 wt1: 46.1705264 diff:-1.5018574 LH HL @2026-03-02T16:14:19.183337Z
+
+## Tendency
+
+### Find Tendency
+
+The tendency granularity is calculated by the inject() method.
+
+Rule for selecting the tendency:
+
+Search the Local Alignments, starting from the alignment with the biggest granularity. While no match, try next Local Alignment. When all local alignments have been processed, if no match, tendency is null.
+
+- for the BUY side:
+
+The tendency is the lowest granularity from the local alignment (smallest) that is either AN, BN, RN or XN.
+
+- for the SELL side:
+
+The tendency is the lowest granularity from the local alignment (smallest) that is either AP, BP, RP or XP.
+
+### Logging of Tendency
+
+independant logging method public void logTendency()
+
+"TENDENCY:" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
+
+TENDENCY: 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
