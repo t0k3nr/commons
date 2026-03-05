@@ -49,9 +49,13 @@ For SELL side a granularity is considered valid if:
 
 - STLDLHHL: its SgMove is SN, SP, ST and decreasingHighs
 
-## Selection of Aligned Signals
+## Memory Persistence of alignments
 
 When we have selected the valid signals of each side, we can now evaluate signal alignment.
+
+- The AbstractNgWaveService.inject method is always called synchronously, which means it is never called by various threads at the same time. This method is responsible of storing all alignments as persistent variables, and update them each time inject(...) is called. They must be synchronized to prevent concurrency issues, as other methods can access these variables. Inject build them, and each time it is called, replace them with the new evaluation to maintain them up-do-date.
+
+- The AbstractNgWaveService.logAlignments() method can be called independently to log the info using these memory persistent variables.
 
 ### Local Alignment
 
@@ -100,7 +104,7 @@ An Enabler Alignment is a Local Alignment whose lower granularity is below GRANU
 
 Example: if GRANULARITY_FROM is S60, a Local Alignment is an Enabler Alignment if its lower granularity is < durationOf(S60) * 3 which means S180.
 
-## Logging of Aligments
+### Logging of Aligments
 
 To produce line like "D36.3:AN wt:-15.7844706 highestWt:-15.8885586 wt1: 35.4532904 diff:-4.2789475 HH LL POB @2026-03-02T16:14:19.183337Z" use toMoveString() method of StatVO
 
@@ -132,3 +136,29 @@ D4OVER D9.6:RN wt:-6.7622419 highestWt:-20.8890015 wt1: -52.3222729 diff:2.85762
 -- Combined Alignment 2 - distance:    466,500
 -- Local Alignment - width:    2.35 - distance:    466,500 ⚠️️
   STLD M1.0:SN wt:-0.7167646 highestWt:-1.0904788 wt1: 46.1705264 diff:-1.5018574 LH HL @2026-03-02T16:14:19.183337Z
+
+## Tendency
+
+### Find Tendency
+
+The tendency granularity is calculated by the inject() method.
+
+Rule for selecting the tendency:
+
+Search the Local Alignments, starting from the alignment with the biggest granularity. While no match, try next Local Alignment. When all local alignments have been processed, if no match, tendency is null.
+
+- for the BUY side:
+
+The tendency is the lowest granularity from the local alignment (smallest) that is either AN, BN, RN or XN.
+
+- for the SELL side:
+
+The tendency is the lowest granularity from the local alignment (smallest) that is either AP, BP, RP or XP.
+
+### Logging of Tendency
+
+independant logging method public void logTendency()
+
+"TENDENCY:" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
+
+TENDENCY: 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
