@@ -8,6 +8,7 @@ import java.util.NavigableMap;
 
 import org.jboss.logging.Logger;
 import org.uche.t0ken.commons.enums.StatGranularity;
+import org.uche.t0ken.commons.util.SgMove;
 import org.uche.t0ken.commons.vo.StatVO;
 
 public abstract class AbstractNgWaveService extends AbstractWaveService {
@@ -60,6 +61,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	private List<List<List<ValidEntry>>> persistedSellCombinedAlignments = new ArrayList<>();
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
+	private ValidEntry persistedBuyTendency = null;
+	private ValidEntry persistedSellTendency = null;
 
 	@Override
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
@@ -98,12 +101,18 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		boolean buyHasEnabler = !filterWithEnabler(buyCombined).isEmpty();
 		boolean sellHasEnabler = !filterWithEnabler(sellCombined).isEmpty();
 
+		// Step 5: Find Tendency for each side
+		ValidEntry buyTendency = findTendency(buyLocalAlignments, true);
+		ValidEntry sellTendency = findTendency(sellLocalAlignments, false);
+
 		// Store as persistent variables (synchronized for concurrent access by logAlignments)
 		synchronized (alignmentLock) {
 			persistedBuyCombinedAlignments = buyCombined;
 			persistedSellCombinedAlignments = sellCombined;
 			persistedBuyHasEnabler = buyHasEnabler;
 			persistedSellHasEnabler = sellHasEnabler;
+			persistedBuyTendency = buyTendency;
+			persistedSellTendency = sellTendency;
 		}
 
 		return null;
@@ -124,6 +133,48 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 		logAlignmentSide("BUY", buyCombined, buyHasEnabler);
 		logAlignmentSide("SELL", sellCombined, sellHasEnabler);
+	}
+
+	// ========== Tendency ==========
+
+	/*
+	 * Search Local Alignments starting from the biggest granularity.
+	 * For BUY: find the lowest granularity entry whose SgMove is AN, BN, RN or XN.
+	 * For SELL: find the lowest granularity entry whose SgMove is AP, BP, RP or XP.
+	 */
+	private ValidEntry findTendency(List<List<ValidEntry>> localAlignments, boolean buy) {
+		for (List<ValidEntry> la : localAlignments) {
+			for (int i = la.size() - 1; i >= 0; i--) {
+				SgMove mv = la.get(i).stat.getMv();
+				if (buy) {
+					if (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN) {
+						return la.get(i);
+					}
+				} else {
+					if (mv == SgMove.AP || mv == SgMove.BP || mv == SgMove.RP || mv == SgMove.XP) {
+						return la.get(i);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public void logTendency() {
+		ValidEntry buyTendency;
+		ValidEntry sellTendency;
+
+		synchronized (alignmentLock) {
+			buyTendency = persistedBuyTendency;
+			sellTendency = persistedSellTendency;
+		}
+
+		if (buyTendency != null) {
+			logger.info("TENDENCY: \uD83D\uDFE2 " + buyTendency.stat.toMoveString());
+		}
+		if (sellTendency != null) {
+			logger.info("TENDENCY: \uD83D\uDD34 " + sellTendency.stat.toMoveString());
+		}
 	}
 
 	// ========== Validity type resolution ==========
