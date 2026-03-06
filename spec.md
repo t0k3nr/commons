@@ -8,6 +8,8 @@
 - RN_XN_THRESHOLD: default to -6.
 - D4OVER_MIN_MUL: default to 3.
 - D4OVER_MAX_MUL: default to 5.
+- D4LHHL_MIN_MUL: default to 3.
+- D4LHHL_MAX_MUL: default to 5.
 - STALLED_P_THRESHOLD: default to 30.
 - STALLED_N_THRESHOLD: default to -30.
 - LOCAL_ALIGNMENT_RATIO: default to 2.
@@ -35,7 +37,9 @@ For BUY side a granularity is considered valid if:
 
 - STLD: its SgMove is SN, SP, ST and wt1 <= STALLED_N_THRESHOLD
 
-- STLDLHHL: its SgMove is SN, SP, ST and increasingLows
+- STLDLHHL (deprecated): its SgMove is SN, SP, ST and increasingLows
+
+- STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (BUY side) (see above)
 
 #### Validity of a granularity for SELL SIDE
 
@@ -47,7 +51,9 @@ For SELL side a granularity is considered valid if:
 
 - STLD: its SgMove is SN, SP, ST and wt1 >= STALLED_P_THRESHOLD
 
-- STLDLHHL: its SgMove is SN, SP, ST and decreasingHighs
+- STLDLHHL (deprecated): its SgMove is SN, SP, ST and decreasingHighs
+
+- STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (SELL side) (see above)
 
 ## Memory Persistence of alignments
 
@@ -145,15 +151,9 @@ The tendency granularity is calculated by the inject() method.
 
 Rule for selecting the tendency:
 
-Search the Local Alignments, starting from the alignment with the biggest granularity. While no match, try next Local Alignment. When all local alignments have been processed, if no match, tendency is null.
+Search all moves, starting from the biggest granularity. When all moves (stats) have been processed, if no match, tendency is null.
 
-- for the BUY side:
-
-The tendency is the lowest granularity from the local alignment (smallest) that is either AN, BN, RN or XN.
-
-- for the SELL side:
-
-The tendency is the lowest granularity from the local alignment (smallest) that is either AP, BP, RP or XP.
+Skip any SP, SN, ST found on the top of the list. The tendency is the lowest granularity that is either AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST, or granularity from the opposite side.
 
 ### Logging of Tendency
 

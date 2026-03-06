@@ -21,6 +21,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	protected BigDecimal RN_XN_THRESHOLD = new BigDecimal(-6);
 	protected double D4OVER_MIN_MUL = 3.0;
 	protected double D4OVER_MAX_MUL = 5.0;
+	protected double D4LHHL_MIN_MUL = 3.0;
+	protected double D4LHHL_MAX_MUL = 5.0;
 	protected BigDecimal STALLED_P_THRESHOLD = new BigDecimal(30);
 	protected BigDecimal STALLED_N_THRESHOLD = new BigDecimal(-30);
 	protected double LOCAL_ALIGNMENT_RATIO = 2.0;
@@ -35,7 +37,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		OVER("  OVER"),
 		LHHL("  LHHL"),
 		STLD("  STLD"),
-		STLDLH("STLDLH");
+		STD4LH("STD4LH");
 
 		private final String label;
 		ValidityType(String label) { this.label = label; }
@@ -61,8 +63,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	private List<List<List<ValidEntry>>> persistedSellCombinedAlignments = new ArrayList<>();
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
-	private ValidEntry persistedBuyTendency = null;
-	private ValidEntry persistedSellTendency = null;
+	private StatVO persistedTendency = null;
 
 	@Override
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
@@ -101,9 +102,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		boolean buyHasEnabler = !filterWithEnabler(buyCombined).isEmpty();
 		boolean sellHasEnabler = !filterWithEnabler(sellCombined).isEmpty();
 
-		// Step 5: Find Tendency for each side
-		ValidEntry buyTendency = findTendency(buyLocalAlignments, true);
-		ValidEntry sellTendency = findTendency(sellLocalAlignments, false);
+		// Step 5: Find Tendency (single scan of all moves)
+		StatVO tendency = findTendency(moves);
 
 		// Store as persistent variables (synchronized for concurrent access by logAlignments)
 		synchronized (alignmentLock) {
@@ -111,8 +111,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 			persistedSellCombinedAlignments = sellCombined;
 			persistedBuyHasEnabler = buyHasEnabler;
 			persistedSellHasEnabler = sellHasEnabler;
-			persistedBuyTendency = buyTendency;
-			persistedSellTendency = sellTendency;
+			persistedTendency = tendency;
 		}
 
 		return null;
@@ -138,42 +137,67 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	// ========== Tendency ==========
 
 	/*
-	 * Search Local Alignments starting from the biggest granularity.
-	 * For BUY: find the lowest granularity entry whose SgMove is AN, BN, RN or XN.
-	 * For SELL: find the lowest granularity entry whose SgMove is AP, BP, RP or XP.
+	 * Search all moves starting from the biggest granularity.
+	 * Skip any leading SP, SN, ST. The tendency is the lowest granularity
+	 * that is AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST
+	 * or a move from the opposite side.
 	 */
-	private ValidEntry findTendency(List<List<ValidEntry>> localAlignments, boolean buy) {
-		for (List<ValidEntry> la : localAlignments) {
-			for (int i = la.size() - 1; i >= 0; i--) {
-				SgMove mv = la.get(i).stat.getMv();
-				if (buy) {
-					if (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN) {
-						return la.get(i);
-					}
-				} else {
-					if (mv == SgMove.AP || mv == SgMove.BP || mv == SgMove.RP || mv == SgMove.XP) {
-						return la.get(i);
-					}
+	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
+		boolean skippingLeadingStalls = true;
+		Boolean positiveSide = null; // null=undetermined, true=SELL(positive), false=BUY(negative)
+		StatVO tendency = null;
+
+		for (StatGranularity sg : moves.descendingKeySet()) {
+			if (sg.compareTo(GRANULARITY_FROM) < 0 || sg.compareTo(GRANULARITY_UNTIL) > 0) continue;
+
+			StatVO mv = moves.get(sg);
+			if (mv == null || mv.getMv() == null) continue;
+
+			SgMove move = mv.getMv();
+
+			boolean isStall = (move == SgMove.SP || move == SgMove.SN || move == SgMove.ST);
+			boolean isPositive = (move == SgMove.AP || move == SgMove.BP || move == SgMove.RP || move == SgMove.XP);
+			boolean isNegative = (move == SgMove.AN || move == SgMove.BN || move == SgMove.RN || move == SgMove.XN);
+
+			if (skippingLeadingStalls) {
+				if (isStall) continue;
+				skippingLeadingStalls = false;
+			}
+
+			if (isStall) break;
+
+			if (isPositive) {
+				if (positiveSide == null) {
+					positiveSide = true;
+				} else if (!positiveSide) {
+					break; // opposite side
 				}
+				tendency = mv;
+			} else if (isNegative) {
+				if (positiveSide == null) {
+					positiveSide = false;
+				} else if (positiveSide) {
+					break; // opposite side
+				}
+				tendency = mv;
 			}
 		}
-		return null;
+
+		return tendency;
 	}
 
 	public void logTendency() {
-		ValidEntry buyTendency;
-		ValidEntry sellTendency;
+		StatVO tendency;
 
 		synchronized (alignmentLock) {
-			buyTendency = persistedBuyTendency;
-			sellTendency = persistedSellTendency;
+			tendency = persistedTendency;
 		}
 
-		if (buyTendency != null) {
-			logger.info("TENDENCY: \uD83D\uDFE2 " + buyTendency.stat.toMoveString());
-		}
-		if (sellTendency != null) {
-			logger.info("TENDENCY: \uD83D\uDD34 " + sellTendency.stat.toMoveString());
+		if (tendency != null) {
+			SgMove mv = tendency.getMv();
+			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
+			String emoji = isBuy ? "\uD83D\uDFE2" : "\uD83D\uDD34";
+			logger.info("TENDENCY: " + emoji + " " + tendency.toMoveString());
 		}
 	}
 
@@ -184,7 +208,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		if (isValidBuyLHHL(mv)) return ValidityType.LHHL;
 		if (isValidBuyOVER(mv)) return ValidityType.OVER;
 		if (isValidBuySTLD(mv)) return ValidityType.STLD;
-		if (isValidBuySTLDLHHL(mv)) return ValidityType.STLDLH;
+		if (isValidBuySTD4LHHL(sg, mv, moves)) return ValidityType.STD4LH;
 
 		return null;
 	}
@@ -194,7 +218,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		if (isValidSellLHHL(mv)) return ValidityType.LHHL;
 		if (isValidSellOVER(mv)) return ValidityType.OVER;
 		if (isValidSellSTLD(mv)) return ValidityType.STLD;
-		if (isValidSellSTLDLHHL(mv)) return ValidityType.STLDLH;
+		if (isValidSellSTD4LHHL(sg, mv, moves)) return ValidityType.STD4LH;
 
 		return null;
 	}
@@ -225,10 +249,10 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		return mv.wt1Below(STALLED_N_THRESHOLD);
 	}
 
-	// STLDLHHL BUY: SgMove is SN, SP, ST AND increasingLows
-	private boolean isValidBuySTLDLHHL(StatVO mv) {
+	// STD4LHHL BUY: SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (BUY side)
+	private boolean isValidBuySTD4LHHL(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
 		if (!isStalled(mv)) return false;
-		return Boolean.TRUE.equals(mv.getIncreasingLows());
+		return hasSmallerGranularityBuyLHHL(sg, moves);
 	}
 
 	// LHHL SELL: SgMove is RP or XP AND decreasingHighs
@@ -255,10 +279,10 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		return mv.wt1Above(STALLED_P_THRESHOLD);
 	}
 
-	// STLDLHHL SELL: SgMove is SN, SP, ST AND decreasingHighs
-	private boolean isValidSellSTLDLHHL(StatVO mv) {
+	// STD4LHHL SELL: SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (SELL side)
+	private boolean isValidSellSTD4LHHL(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
 		if (!isStalled(mv)) return false;
-		return Boolean.TRUE.equals(mv.getDecreasingHighs());
+		return hasSmallerGranularitySellLHHL(sg, moves);
 	}
 
 	private boolean isStalled(StatVO mv) {
@@ -272,7 +296,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		}
 	}
 
-	// ========== D4OVER helpers ==========
+	// ========== D4OVER / D4LHHL helpers ==========
 
 	private boolean hasSmallerGranularityBelow(StatGranularity sg, NavigableMap<StatGranularity, StatVO> moves, BigDecimal threshold) {
 		int duration = sg.getIndex();
@@ -284,6 +308,42 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 			if (d >= minDuration && d <= maxDuration) {
 				StatVO smallerMv = moves.get(smallerSg);
 				if (smallerMv != null && smallerMv.getWt1() != null && smallerMv.wt1Below(threshold)) {
+					return true;
+				}
+			}
+			if (d > maxDuration) break;
+		}
+		return false;
+	}
+
+	private boolean hasSmallerGranularityBuyLHHL(StatGranularity sg, NavigableMap<StatGranularity, StatVO> moves) {
+		int duration = sg.getIndex();
+		int minDuration = (int) (duration / D4LHHL_MAX_MUL);
+		int maxDuration = (int) (duration / D4LHHL_MIN_MUL);
+
+		for (StatGranularity smallerSg : moves.keySet()) {
+			int d = smallerSg.getIndex();
+			if (d >= minDuration && d <= maxDuration) {
+				StatVO smallerMv = moves.get(smallerSg);
+				if (smallerMv != null && isValidBuyLHHL(smallerMv)) {
+					return true;
+				}
+			}
+			if (d > maxDuration) break;
+		}
+		return false;
+	}
+
+	private boolean hasSmallerGranularitySellLHHL(StatGranularity sg, NavigableMap<StatGranularity, StatVO> moves) {
+		int duration = sg.getIndex();
+		int minDuration = (int) (duration / D4LHHL_MAX_MUL);
+		int maxDuration = (int) (duration / D4LHHL_MIN_MUL);
+
+		for (StatGranularity smallerSg : moves.keySet()) {
+			int d = smallerSg.getIndex();
+			if (d >= minDuration && d <= maxDuration) {
+				StatVO smallerMv = moves.get(smallerSg);
+				if (smallerMv != null && isValidSellLHHL(smallerMv)) {
 					return true;
 				}
 			}
@@ -411,6 +471,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	@Override public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; super.setRN_XN_THRESHOLD(v); }
 	public void setD4OVER_MIN_MUL(double v) { this.D4OVER_MIN_MUL = v; }
 	public void setD4OVER_MAX_MUL(double v) { this.D4OVER_MAX_MUL = v; }
+	public void setD4LHHL_MIN_MUL(double v) { this.D4LHHL_MIN_MUL = v; }
+	public void setD4LHHL_MAX_MUL(double v) { this.D4LHHL_MAX_MUL = v; }
 	public void setSTALLED_P_THRESHOLD(BigDecimal v) { this.STALLED_P_THRESHOLD = v; }
 	public void setSTALLED_N_THRESHOLD(BigDecimal v) { this.STALLED_N_THRESHOLD = v; }
 	public void setLOCAL_ALIGNMENT_RATIO(double v) { this.LOCAL_ALIGNMENT_RATIO = v; }
