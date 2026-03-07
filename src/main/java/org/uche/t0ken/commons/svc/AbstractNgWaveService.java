@@ -32,7 +32,7 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	// ========== Validity type labels (6 chars, right-aligned) ==========
 
-	private enum ValidityType {
+	public enum ValidityType {
 		D4OVER("D4OVER"),
 		OVER("  OVER"),
 		LHHL("  LHHL"),
@@ -44,10 +44,10 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 		public String getLabel() { return label; }
 	}
 
-	private static class ValidEntry {
-		final StatGranularity sg;
-		final StatVO stat;
-		final ValidityType type;
+	public static class ValidEntry {
+		public final StatGranularity sg;
+		public final StatVO stat;
+		public final ValidityType type;
 
 		ValidEntry(StatGranularity sg, StatVO stat, ValidityType type) {
 			this.sg = sg;
@@ -199,6 +199,28 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 			String emoji = isBuy ? "\uD83D\uDFE2" : "\uD83D\uDD34";
 			logger.info("TENDENCY: " + emoji + " " + tendency.toMoveString());
 		}
+	}
+
+	// ========== Public getters for websocket broadcasting ==========
+
+	public List<List<List<ValidEntry>>> getBuyCombinedAlignments() {
+		synchronized (alignmentLock) { return persistedBuyCombinedAlignments; }
+	}
+
+	public List<List<List<ValidEntry>>> getSellCombinedAlignments() {
+		synchronized (alignmentLock) { return persistedSellCombinedAlignments; }
+	}
+
+	public boolean isBuyHasEnabler() {
+		synchronized (alignmentLock) { return persistedBuyHasEnabler; }
+	}
+
+	public boolean isSellHasEnabler() {
+		synchronized (alignmentLock) { return persistedSellHasEnabler; }
+	}
+
+	public StatVO getTendency() {
+		synchronized (alignmentLock) { return persistedTendency; }
 	}
 
 	// ========== Validity type resolution ==========
@@ -482,11 +504,11 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	// ========== Alignment metrics ==========
 
-	private double laWidth(List<ValidEntry> la) {
+	public double laWidth(List<ValidEntry> la) {
 		return (double) la.get(0).sg.getIndex() / (double) la.get(la.size() - 1).sg.getIndex();
 	}
 
-	private double laDistance(List<ValidEntry> prevLA, List<ValidEntry> currLA) {
+	public double laDistance(List<ValidEntry> prevLA, List<ValidEntry> currLA) {
 		return (double) prevLA.get(prevLA.size() - 1).sg.getIndex() / (double) currLA.get(0).sg.getIndex();
 	}
 
