@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.16.0](https://github.com/t0k3nr/commons/compare/v1.15.0...v1.16.0) (2026-03-07)
+
+
+### Features
+
+* add setters and extend AbstractWaveService for backward compatibility ([#20](https://github.com/t0k3nr/commons/issues/20)) ([06e9ff2](https://github.com/t0k3nr/commons/commit/06e9ff26b3c117ac80093a331404bd204a160870))
+* add side emojis to alignment log, comment out verbose divergent logs, bump to 1.18.0 ([#24](https://github.com/t0k3nr/commons/issues/24)) ([b406868](https://github.com/t0k3nr/commons/commit/b40686812042147d137f703d46e3bdf9b8a41295))
+* alignment memory persistence in inject(), parameterless logAlignments(), bump to 1.21.0 ([#27](https://github.com/t0k3nr/commons/issues/27)) ([060d9b2](https://github.com/t0k3nr/commons/commit/060d9b295459f45c8fc47c9bc43d695b2fe5f42c))
+* expose alignment/tendency getters for websocket broadcasting ([#32](https://github.com/t0k3nr/commons/issues/32)) ([360d00e](https://github.com/t0k3nr/commons/commit/360d00eb8aa06376ae83e1808d0a38d4c83cc155))
+* OVER as standalone validity type, LHHL requires only increasingLows/decreasingHighs, bump to 1.20.0 ([#26](https://github.com/t0k3nr/commons/issues/26)) ([6d28871](https://github.com/t0k3nr/commons/commit/6d28871354d58e9d9bc475b793d6d7dfd297c1bb))
+* rewrite tendency + replace STLDLHHL with STD4LHHL per new spec ([#31](https://github.com/t0k3nr/commons/issues/31)) ([215f902](https://github.com/t0k3nr/commons/commit/215f90213657d93c4851890f1af1870f3f2a41b2))
+* tendency logic in inject(), logTendency() method, bump to 1.22.0 ([#28](https://github.com/t0k3nr/commons/issues/28)) ([c4d9df4](https://github.com/t0k3nr/commons/commit/c4d9df4f613b7aed12271698d2fc73d80fc5da8f))
+* update D4OVER spec and comments, bump to 1.19.0 ([#25](https://github.com/t0k3nr/commons/issues/25)) ([1a899b1](https://github.com/t0k3nr/commons/commit/1a899b133742a739372112880234b15213003c5f))
+
+
+### Bug Fixes
+
+* add deriveIndicators() to decouple WtMinMax state from per-match indicator derivation ([#30](https://github.com/t0k3nr/commons/issues/30)) ([47dda7d](https://github.com/t0k3nr/commons/commit/47dda7dd94f7e30f9d04a5329d1b89c5727e6325))
+* add null guard to highestWtAbove and highestWtBelow ([#22](https://github.com/t0k3nr/commons/issues/22)) ([0395d13](https://github.com/t0k3nr/commons/commit/0395d13f5660d5970728cfe0f0a04c99938f120e))
+* null guard fixes, setter chaining, and extract logAlignments ([#23](https://github.com/t0k3nr/commons/issues/23)) ([5617cec](https://github.com/t0k3nr/commons/commit/5617cec045db607840559594785b707eecd9367a))
+
 ## [1.15.0](https://github.com/t0k3nr/commons/compare/v1.14.0...v1.15.0) (2026-03-03)
 
 
