@@ -21,8 +21,6 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	protected BigDecimal RN_XN_THRESHOLD = new BigDecimal(-6);
 	protected double D4OVER_MIN_MUL = 3.0;
 	protected double D4OVER_MAX_MUL = 5.0;
-	protected double D4LHHL_MIN_MUL = 3.0;
-	protected double D4LHHL_MAX_MUL = 5.0;
 	protected BigDecimal STALLED_P_THRESHOLD = new BigDecimal(30);
 	protected BigDecimal STALLED_N_THRESHOLD = new BigDecimal(-30);
 	protected double LOCAL_ALIGNMENT_RATIO = 2.0;
@@ -30,6 +28,10 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	protected StatGranularity GRANULARITY_FROM = StatGranularity.S60;
 	protected StatGranularity GRANULARITY_UNTIL = StatGranularity.S17457600;
 	protected double SIGNAL_DISTANCE_MULTIPLIER = 5.0;
+	protected BigDecimal LOWNRGY_N_WT1_THRESHOLD = new BigDecimal(30);
+	protected BigDecimal LOWNRGY_N_WT_THRESHOLD = new BigDecimal(-6);
+	protected BigDecimal LOWNRGY_P_WT1_THRESHOLD = new BigDecimal(-30);
+	protected BigDecimal LOWNRGY_P_WT_THRESHOLD = new BigDecimal(6);
 
 	// ========== Validity type labels (6 chars, right-aligned) ==========
 
@@ -38,7 +40,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		OVER("  OVER"),
 		LHHL("  LHHL"),
 		STLD("  STLD"),
-		STD4LH("STD4LH");
+		LOWNRG("LOWNRG");
 
 		private final String label;
 		ValidityType(String label) { this.label = label; }
@@ -288,7 +290,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		if (isValidBuyLHHL(mv)) return ValidityType.LHHL;
 		if (isValidBuyOVER(mv)) return ValidityType.OVER;
 		if (isValidBuySTLD(mv)) return ValidityType.STLD;
-		if (isValidBuySTD4LHHL(sg, mv, moves)) return ValidityType.STD4LH;
+		if (isValidBuyLOWNRGY(mv)) return ValidityType.LOWNRG;
 
 		return null;
 	}
@@ -298,7 +300,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		if (isValidSellLHHL(mv)) return ValidityType.LHHL;
 		if (isValidSellOVER(mv)) return ValidityType.OVER;
 		if (isValidSellSTLD(mv)) return ValidityType.STLD;
-		if (isValidSellSTD4LHHL(sg, mv, moves)) return ValidityType.STD4LH;
+		if (isValidSellLOWNRGY(mv)) return ValidityType.LOWNRG;
 
 		return null;
 	}
@@ -329,10 +331,12 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		return mv.wt1Below(STALLED_N_THRESHOLD);
 	}
 
-	// STD4LHHL BUY: SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (BUY side)
-	private boolean isValidBuySTD4LHHL(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
-		if (!isStalled(mv)) return false;
-		return hasSmallerGranularityBuyLHHL(sg, moves);
+	// LOWNRGY BUY: SgMove is AN, BN AND highestWt < LOWNRGY_N_WT_THRESHOLD AND wt1 > LOWNRGY_N_WT1_THRESHOLD
+	private boolean isValidBuyLOWNRGY(StatVO mv) {
+		SgMove move = mv.getMv();
+		if (move != SgMove.AN && move != SgMove.BN) return false;
+		if (mv.getHighestWt() == null || mv.getWt1() == null) return false;
+		return mv.highestWtBelow(LOWNRGY_N_WT_THRESHOLD) && mv.wt1Above(LOWNRGY_N_WT1_THRESHOLD);
 	}
 
 	// LHHL SELL: SgMove is RP or XP AND decreasingHighs
@@ -359,10 +363,12 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		return mv.wt1Above(STALLED_P_THRESHOLD);
 	}
 
-	// STD4LHHL SELL: SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (SELL side)
-	private boolean isValidSellSTD4LHHL(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
-		if (!isStalled(mv)) return false;
-		return hasSmallerGranularitySellLHHL(sg, moves);
+	// LOWNRGY SELL: SgMove is AP, BP AND highestWt > LOWNRGY_P_WT_THRESHOLD AND wt1 < LOWNRGY_P_WT1_THRESHOLD
+	private boolean isValidSellLOWNRGY(StatVO mv) {
+		SgMove move = mv.getMv();
+		if (move != SgMove.AP && move != SgMove.BP) return false;
+		if (mv.getHighestWt() == null || mv.getWt1() == null) return false;
+		return mv.highestWtAbove(LOWNRGY_P_WT_THRESHOLD) && mv.wt1Below(LOWNRGY_P_WT1_THRESHOLD);
 	}
 
 	private boolean isStalled(StatVO mv) {
@@ -388,42 +394,6 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			if (d >= minDuration && d <= maxDuration) {
 				StatVO smallerMv = moves.get(smallerSg);
 				if (smallerMv != null && smallerMv.getWt1() != null && smallerMv.wt1Below(threshold)) {
-					return true;
-				}
-			}
-			if (d > maxDuration) break;
-		}
-		return false;
-	}
-
-	private boolean hasSmallerGranularityBuyLHHL(StatGranularity sg, NavigableMap<StatGranularity, StatVO> moves) {
-		int duration = sg.getIndex();
-		int minDuration = (int) (duration / D4LHHL_MAX_MUL);
-		int maxDuration = (int) (duration / D4LHHL_MIN_MUL);
-
-		for (StatGranularity smallerSg : moves.keySet()) {
-			int d = smallerSg.getIndex();
-			if (d >= minDuration && d <= maxDuration) {
-				StatVO smallerMv = moves.get(smallerSg);
-				if (smallerMv != null && smallerMv.getMv() != null && isValidBuyLHHL(smallerMv)) {
-					return true;
-				}
-			}
-			if (d > maxDuration) break;
-		}
-		return false;
-	}
-
-	private boolean hasSmallerGranularitySellLHHL(StatGranularity sg, NavigableMap<StatGranularity, StatVO> moves) {
-		int duration = sg.getIndex();
-		int minDuration = (int) (duration / D4LHHL_MAX_MUL);
-		int maxDuration = (int) (duration / D4LHHL_MIN_MUL);
-
-		for (StatGranularity smallerSg : moves.keySet()) {
-			int d = smallerSg.getIndex();
-			if (d >= minDuration && d <= maxDuration) {
-				StatVO smallerMv = moves.get(smallerSg);
-				if (smallerMv != null && smallerMv.getMv() != null && isValidSellLHHL(smallerMv)) {
 					return true;
 				}
 			}
@@ -555,8 +525,6 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public BigDecimal getWT1_OVERSOLD_THRESHOLD() { return this.WAVETREND_OS; }
 	public void setD4OVER_MIN_MUL(double v) { this.D4OVER_MIN_MUL = v; }
 	public void setD4OVER_MAX_MUL(double v) { this.D4OVER_MAX_MUL = v; }
-	public void setD4LHHL_MIN_MUL(double v) { this.D4LHHL_MIN_MUL = v; }
-	public void setD4LHHL_MAX_MUL(double v) { this.D4LHHL_MAX_MUL = v; }
 	public void setSTALLED_P_THRESHOLD(BigDecimal v) { this.STALLED_P_THRESHOLD = v; }
 	public void setSTALLED_N_THRESHOLD(BigDecimal v) { this.STALLED_N_THRESHOLD = v; }
 	public void setLOCAL_ALIGNMENT_RATIO(double v) { this.LOCAL_ALIGNMENT_RATIO = v; }
@@ -564,6 +532,10 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public void setGRANULARITY_FROM(StatGranularity v) { this.GRANULARITY_FROM = v; }
 	public void setGRANULARITY_UNTIL(StatGranularity v) { this.GRANULARITY_UNTIL = v; }
 	public void setSIGNAL_DISTANCE_MULTIPLIER(double v) { this.SIGNAL_DISTANCE_MULTIPLIER = v; }
+	public void setLOWNRGY_N_WT1_THRESHOLD(BigDecimal v) { this.LOWNRGY_N_WT1_THRESHOLD = v; }
+	public void setLOWNRGY_N_WT_THRESHOLD(BigDecimal v) { this.LOWNRGY_N_WT_THRESHOLD = v; }
+	public void setLOWNRGY_P_WT1_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT1_THRESHOLD = v; }
+	public void setLOWNRGY_P_WT_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT_THRESHOLD = v; }
 
 	// ========== Alignment metrics ==========
 

@@ -8,14 +8,17 @@
 - RN_XN_THRESHOLD: default to -6.
 - D4OVER_MIN_MUL: default to 3.
 - D4OVER_MAX_MUL: default to 5.
-- D4LHHL_MIN_MUL: default to 3.
-- D4LHHL_MAX_MUL: default to 5.
 - STALLED_P_THRESHOLD: default to 30.
 - STALLED_N_THRESHOLD: default to -30.
 - LOCAL_ALIGNMENT_RATIO: default to 2.
 - COMBINED_ALIGNMENT_RATIO: default to 4.
 - GRANULARITY_FROM: default to S60.
 - GRANULARITY_UNTIL: default to S17457600.
+- LOWNRGY_N_WT1_THRESHOLD: default to 30.
+- LOWNRGY_N_WT_THRESHOLD: default to -6.
+- LOWNRGY_P_WT1_THRESHOLD: default to -30.
+- LOWNRGY_P_WT_THRESHOLD: default to 6.
+
 
 ## Alignments
 
@@ -37,7 +40,7 @@ For BUY side a granularity is considered valid if:
 
 - STLD: its SgMove is SN, SP, ST and wt1 <= STALLED_N_THRESHOLD
 
-- STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (BUY side) (see above)
+- LOWNRGY: its SgMove is AN, BN AND its highestWt < LOWNRGY_N_WT_THRESHOLD (configurable) and its WT1 is > LOWNRGY_N_WT1_THRESHOLD
 
 #### Validity of a granularity for SELL SIDE
 
@@ -49,7 +52,7 @@ For SELL side a granularity is considered valid if:
 
 - STLD: its SgMove is SN, SP, ST and wt1 >= STALLED_P_THRESHOLD
 
-- STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (SELL side) (see above)
+- LOWNRGY: its SgMove is AP, BP AND its highestWt > LOWNRGY_P_WT_THRESHOLD (configurable) and its WT1 is < LOWNRGY_P_WT1_THRESHOLD
 
 ## Memory Persistence of alignments
 
