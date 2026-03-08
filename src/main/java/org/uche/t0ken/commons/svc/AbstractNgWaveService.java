@@ -283,6 +283,10 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		synchronized (alignmentLock) { return persistedTendency; }
 	}
 
+	public StatGranularity getTendencySg() {
+		synchronized (alignmentLock) { return persistedTendencySg; }
+	}
+
 	// ========== Validity type resolution ==========
 
 	private ValidityType getValidityForBuy(StatGranularity sg, StatVO mv, NavigableMap<StatGranularity, StatVO> moves) {
