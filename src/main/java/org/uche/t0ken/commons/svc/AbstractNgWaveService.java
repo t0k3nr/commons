@@ -133,11 +133,11 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 
 		if (buySignal && !sellSignal) return false;
 		if (sellSignal && !buySignal) return true;
-		if (buySignal && sellSignal) {
+		/*if (buySignal && sellSignal) {
 			SgMove mv = tendency.getMv();
 			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
 			return !isBuy;
-		}
+		}*/
 		return null;
 	}
 
