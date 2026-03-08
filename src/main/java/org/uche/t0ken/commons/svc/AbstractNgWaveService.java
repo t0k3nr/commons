@@ -11,7 +11,7 @@ import org.uche.t0ken.commons.enums.StatGranularity;
 import org.uche.t0ken.commons.util.SgMove;
 import org.uche.t0ken.commons.vo.StatVO;
 
-public abstract class AbstractNgWaveService extends AbstractWaveService {
+public abstract class AbstractNgWaveService implements WaveInterface {
 
 	private final static Logger logger = Logger.getLogger("AbstractNgWaveService");
 
@@ -64,6 +64,8 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
 	private StatVO persistedTendency = null;
+
+	public abstract TimeInterface getTimeService();
 
 	@Override
 	public Boolean inject(Instant now, BigDecimal bid, BigDecimal ask,
@@ -489,8 +491,12 @@ public abstract class AbstractNgWaveService extends AbstractWaveService {
 
 	public void setWAVETREND_OS(BigDecimal v) { this.WAVETREND_OS = v; }
 	public void setWAVETREND_OB(BigDecimal v) { this.WAVETREND_OB = v; }
-	@Override public void setRP_XP_THRESHOLD(BigDecimal v) { this.RP_XP_THRESHOLD = v; super.setRP_XP_THRESHOLD(v); }
-	@Override public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; super.setRN_XN_THRESHOLD(v); }
+	public void setRP_XP_THRESHOLD(BigDecimal v) { this.RP_XP_THRESHOLD = v; }
+	public void setRN_XN_THRESHOLD(BigDecimal v) { this.RN_XN_THRESHOLD = v; }
+	public BigDecimal getRP_XP_THRESHOLD() { return this.RP_XP_THRESHOLD; }
+	public BigDecimal getRN_XN_THRESHOLD() { return this.RN_XN_THRESHOLD; }
+	public BigDecimal getWT1_OVERBOUGHT_THRESHOLD() { return this.WAVETREND_OB; }
+	public BigDecimal getWT1_OVERSOLD_THRESHOLD() { return this.WAVETREND_OS; }
 	public void setD4OVER_MIN_MUL(double v) { this.D4OVER_MIN_MUL = v; }
 	public void setD4OVER_MAX_MUL(double v) { this.D4OVER_MAX_MUL = v; }
 	public void setD4LHHL_MIN_MUL(double v) { this.D4LHHL_MIN_MUL = v; }

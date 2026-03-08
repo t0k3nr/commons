@@ -17,7 +17,7 @@
 - GRANULARITY_FROM: default to S60.
 - GRANULARITY_UNTIL: default to S17457600.
 
-## Alignment Signals
+## Alignments
 
 Each time we want to check for aligned signals, we must first check for the validity of the signal of each granularity.
 
@@ -37,8 +37,6 @@ For BUY side a granularity is considered valid if:
 
 - STLD: its SgMove is SN, SP, ST and wt1 <= STALLED_N_THRESHOLD
 
-- STLDLHHL (deprecated): its SgMove is SN, SP, ST and increasingLows
-
 - STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (BUY side) (see above)
 
 #### Validity of a granularity for SELL SIDE
@@ -50,8 +48,6 @@ For SELL side a granularity is considered valid if:
 - D4OVER: its SgMove is AP, BP, XP, RP AND current wt high is decreasing: lower than previous high (decreasingHighs is true) AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought: higher than WAVETREND_OB
 
 - STLD: its SgMove is SN, SP, ST and wt1 >= STALLED_P_THRESHOLD
-
-- STLDLHHL (deprecated): its SgMove is SN, SP, ST and decreasingHighs
 
 - STD4LHHL: its SgMove is SN, SP, ST AND granularity D4LHHL_MIN_MUL to D4LHHL_MAX_MUL times smaller is LHHL (SELL side) (see above)
 
@@ -162,3 +158,7 @@ independant logging method public void logTendency()
 "TENDENCY:" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
 
 TENDENCY: 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+
+## Signals
+
+A tendency is used as a pivot for signalling.
