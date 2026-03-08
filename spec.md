@@ -162,3 +162,29 @@ TENDENCY: 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.
 ## Signals
 
 A tendency is used as a pivot for signalling.
+
+### Condition for triggering a BUY
+
+#### if tendency is valid for BUY side (see Validity definition above)
+
+- there must exist a **single** Combined Alignment from BUY side that is ENABLER and that includes the current tendency;
+OR
+
+- there must exist a **single** Combined Alignment from BUY side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.
+
+#### if tendency is NOT valid for BUY side (see Validity definition above)
+
+- there must exist a **single** Combined Alignment from BUY side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.
+
+### Condition for triggering a SELL
+
+#### if tendency is valid for SELL side (see Validity definition above)
+
+- there must exist a **single** Combined Alignment from SELL side that is ENABLER and that includes the current tendency;
+OR
+
+- there must exist a **single** Combined Alignment from SELL side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.
+
+#### if tendency is NOT valid for SELL side (see Validity definition above)
+
+- there must exist a **single** Combined Alignment from SELL side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.

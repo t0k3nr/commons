@@ -29,6 +29,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	protected double COMBINED_ALIGNMENT_RATIO = 4.0;
 	protected StatGranularity GRANULARITY_FROM = StatGranularity.S60;
 	protected StatGranularity GRANULARITY_UNTIL = StatGranularity.S17457600;
+	protected double SIGNAL_DISTANCE_MULTIPLIER = 5.0;
 
 	// ========== Validity type labels (6 chars, right-aligned) ==========
 
@@ -64,6 +65,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
 	private StatVO persistedTendency = null;
+	private StatGranularity persistedTendencySg = null;
 
 	public abstract TimeInterface getTimeService();
 
@@ -101,11 +103,14 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		List<List<List<ValidEntry>>> sellCombined = buildCombinedAlignments(sellLocalAlignments);
 
 		// Step 4: Combined Alignments that include an Enabler Alignment
-		boolean buyHasEnabler = !filterWithEnabler(buyCombined).isEmpty();
-		boolean sellHasEnabler = !filterWithEnabler(sellCombined).isEmpty();
+		List<List<List<ValidEntry>>> buyEnablerCAs = filterWithEnabler(buyCombined);
+		List<List<List<ValidEntry>>> sellEnablerCAs = filterWithEnabler(sellCombined);
+		boolean buyHasEnabler = !buyEnablerCAs.isEmpty();
+		boolean sellHasEnabler = !sellEnablerCAs.isEmpty();
 
 		// Step 5: Find Tendency (single scan of all moves)
 		StatVO tendency = findTendency(moves);
+		StatGranularity tendencySg = lastFoundTendencySg;
 
 		// Store as persistent variables (synchronized for concurrent access by logAlignments)
 		synchronized (alignmentLock) {
@@ -114,8 +119,25 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			persistedBuyHasEnabler = buyHasEnabler;
 			persistedSellHasEnabler = sellHasEnabler;
 			persistedTendency = tendency;
+			persistedTendencySg = tendencySg;
 		}
 
+		// Step 6: Compute Signal
+		if (tendency == null || tendencySg == null) return null;
+
+		boolean tendencyValidForBuy = getValidityForBuy(tendencySg, tendency, moves) != null;
+		boolean tendencyValidForSell = getValidityForSell(tendencySg, tendency, moves) != null;
+
+		boolean buySignal = checkSignalCondition(buyEnablerCAs, tendencySg, tendencyValidForBuy);
+		boolean sellSignal = checkSignalCondition(sellEnablerCAs, tendencySg, tendencyValidForSell);
+
+		if (buySignal && !sellSignal) return false;
+		if (sellSignal && !buySignal) return true;
+		if (buySignal && sellSignal) {
+			SgMove mv = tendency.getMv();
+			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
+			return !isBuy;
+		}
 		return null;
 	}
 
@@ -136,6 +158,34 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		logAlignmentSide("SELL", sellCombined, sellHasEnabler);
 	}
 
+	// ========== Signals ==========
+
+	private boolean checkSignalCondition(List<List<List<ValidEntry>>> enablerCAs,
+			StatGranularity tendencySg, boolean tendencyValidForSide) {
+		if (enablerCAs.size() != 1) return false;
+		List<List<ValidEntry>> ca = enablerCAs.get(0);
+
+		if (tendencyValidForSide) {
+			if (combinedAlignmentIncludesSg(ca, tendencySg)) return true;
+		}
+
+		StatGranularity caLargest = ca.get(0).get(0).sg;
+		double distance = Math.max(
+			(double) caLargest.getIndex() / (double) tendencySg.getIndex(),
+			(double) tendencySg.getIndex() / (double) caLargest.getIndex()
+		);
+		return distance <= SIGNAL_DISTANCE_MULTIPLIER;
+	}
+
+	private boolean combinedAlignmentIncludesSg(List<List<ValidEntry>> ca, StatGranularity sg) {
+		for (List<ValidEntry> la : ca) {
+			for (ValidEntry ve : la) {
+				if (ve.sg == sg) return true;
+			}
+		}
+		return false;
+	}
+
 	// ========== Tendency ==========
 
 	/*
@@ -144,10 +194,13 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	 * that is AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST
 	 * or a move from the opposite side.
 	 */
+	private StatGranularity lastFoundTendencySg = null;
+
 	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
 		boolean skippingLeadingStalls = true;
 		Boolean positiveSide = null; // null=undetermined, true=SELL(positive), false=BUY(negative)
 		StatVO tendency = null;
+		StatGranularity tendencySg = null;
 
 		for (StatGranularity sg : moves.descendingKeySet()) {
 			if (sg.compareTo(GRANULARITY_FROM) < 0 || sg.compareTo(GRANULARITY_UNTIL) > 0) continue;
@@ -175,6 +228,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					break; // opposite side
 				}
 				tendency = mv;
+				tendencySg = sg;
 			} else if (isNegative) {
 				if (positiveSide == null) {
 					positiveSide = false;
@@ -182,9 +236,11 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					break; // opposite side
 				}
 				tendency = mv;
+				tendencySg = sg;
 			}
 		}
 
+		lastFoundTendencySg = tendencySg;
 		return tendency;
 	}
 
@@ -507,6 +563,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public void setCOMBINED_ALIGNMENT_RATIO(double v) { this.COMBINED_ALIGNMENT_RATIO = v; }
 	public void setGRANULARITY_FROM(StatGranularity v) { this.GRANULARITY_FROM = v; }
 	public void setGRANULARITY_UNTIL(StatGranularity v) { this.GRANULARITY_UNTIL = v; }
+	public void setSIGNAL_DISTANCE_MULTIPLIER(double v) { this.SIGNAL_DISTANCE_MULTIPLIER = v; }
 
 	// ========== Alignment metrics ==========
 
