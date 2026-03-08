@@ -349,7 +349,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			int d = smallerSg.getIndex();
 			if (d >= minDuration && d <= maxDuration) {
 				StatVO smallerMv = moves.get(smallerSg);
-				if (smallerMv != null && isValidBuyLHHL(smallerMv)) {
+				if (smallerMv != null && smallerMv.getMv() != null && isValidBuyLHHL(smallerMv)) {
 					return true;
 				}
 			}
@@ -367,7 +367,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			int d = smallerSg.getIndex();
 			if (d >= minDuration && d <= maxDuration) {
 				StatVO smallerMv = moves.get(smallerSg);
-				if (smallerMv != null && isValidSellLHHL(smallerMv)) {
+				if (smallerMv != null && smallerMv.getMv() != null && isValidSellLHHL(smallerMv)) {
 					return true;
 				}
 			}
