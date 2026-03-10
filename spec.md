@@ -150,9 +150,24 @@ The tendency granularity is calculated by the inject() method.
 
 Rule for selecting the tendency:
 
-Search all moves, starting from the biggest granularity. When all moves (stats) have been processed, if no match, tendency is null.
+Search all moves, starting from the biggest granularity. When all moves (stats) have been processed, if no tendency with width >= 2.00 has been found, tendency is null.
 
-Skip any SP, SN, ST found on the top of the list. The tendency is the lowest granularity that is either AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST, or granularity from the opposite side.
+--- begin find a tendency ---
+
+Skip any SP, SN, ST found on the top of the list. 
+
+- When you find a first granularity that is either AP, BP, RP, XP, AN, BN, RN, XN keep track off it, let's call it currentTendencyFirstSg.
+- keep descending through consecutive granularities of the same side (AP/BP/RP/XP or AN/BN/RN/XN) and store to currentTendencySg, and stop without storing when you encounter SP/SN/ST or an opposite-side move.
+
+The currentTendencySg is the lowest granularity that is either AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST, or granularity from the opposite side.
+
+Now calculate the currentTendencyWidth of the currentTendency, which is currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex().
+
+If currentTendencyWidth < 2.00, ignore this tendency and resume searching from the move that broke it (the SP/SN/ST or opposite-side move that ended the current tendency).
+
+--- end find a tendency ---
+
+Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you find a tendency with currentTendencyWidth >= 2.00 (in which case the tendency is currentTendencySg)
 
 ### Logging of Tendency
 

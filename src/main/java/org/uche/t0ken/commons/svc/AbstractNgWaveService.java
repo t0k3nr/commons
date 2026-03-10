@@ -191,18 +191,23 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	// ========== Tendency ==========
 
 	/*
-	 * Search all moves starting from the biggest granularity.
-	 * Skip any leading SP, SN, ST. The tendency is the lowest granularity
-	 * that is AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST
-	 * or a move from the opposite side.
+	 * Find the tendency from the moves map (descending order = biggest first).
+	 * Iterates through "find a tendency" blocks:
+	 *   1. Skip any SP, SN, ST at the top.
+	 *   2. Track currentTendencyFirstSg (highest) and currentTendencySg (lowest)
+	 *      while descending through same-side moves (AP/BP/RP/XP or AN/BN/RN/XN).
+	 *   3. Stop when encountering SP/SN/ST or an opposite-side move.
+	 *   4. Check width = firstSg.getIndex() / currentSg.getIndex() >= 2.00.
+	 *   5. If rejected, resume from the breaking move and repeat.
 	 */
 	private StatGranularity lastFoundTendencySg = null;
 
 	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
-		boolean skippingLeadingStalls = true;
+		boolean skippingStalls = true;
 		Boolean positiveSide = null; // null=undetermined, true=SELL(positive), false=BUY(negative)
-		StatVO tendency = null;
-		StatGranularity tendencySg = null;
+		StatGranularity currentTendencyFirstSg = null;
+		StatGranularity currentTendencySg = null;
+		StatVO currentTendencyMv = null;
 
 		for (StatGranularity sg : moves.descendingKeySet()) {
 			if (sg.compareTo(GRANULARITY_FROM) < 0 || sg.compareTo(GRANULARITY_UNTIL) > 0) continue;
@@ -216,34 +221,61 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			boolean isPositive = (move == SgMove.AP || move == SgMove.BP || move == SgMove.RP || move == SgMove.XP);
 			boolean isNegative = (move == SgMove.AN || move == SgMove.BN || move == SgMove.RN || move == SgMove.XN);
 
-			if (skippingLeadingStalls) {
+			if (skippingStalls) {
 				if (isStall) continue;
-				skippingLeadingStalls = false;
+				skippingStalls = false;
 			}
 
-			if (isStall) break;
+			if (currentTendencyFirstSg == null) {
+				// Looking for start of a new tendency
+				if (isStall) { skippingStalls = true; continue; }
+				currentTendencyFirstSg = sg;
+				currentTendencySg = sg;
+				currentTendencyMv = mv;
+				positiveSide = isPositive;
+			} else {
+				// In a tendency — check if this move continues it
+				boolean sameSide = (positiveSide && isPositive) || (!positiveSide && isNegative);
 
-			if (isPositive) {
-				if (positiveSide == null) {
-					positiveSide = true;
-				} else if (!positiveSide) {
-					break; // opposite side
+				if (sameSide) {
+					currentTendencySg = sg;
+					currentTendencyMv = mv;
+				} else {
+					// Breaking move — check width of current tendency
+					double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
+					if (width >= 2.00) {
+						lastFoundTendencySg = currentTendencySg;
+						return currentTendencyMv;
+					}
+					// Reject: resume from this breaking move
+					currentTendencyFirstSg = null;
+					currentTendencySg = null;
+					currentTendencyMv = null;
+					positiveSide = null;
+					if (isStall) {
+						skippingStalls = true;
+						continue;
+					}
+					// Opposite-side move starts a new tendency
+					currentTendencyFirstSg = sg;
+					currentTendencySg = sg;
+					currentTendencyMv = mv;
+					positiveSide = isPositive;
 				}
-				tendency = mv;
-				tendencySg = sg;
-			} else if (isNegative) {
-				if (positiveSide == null) {
-					positiveSide = false;
-				} else if (positiveSide) {
-					break; // opposite side
-				}
-				tendency = mv;
-				tendencySg = sg;
 			}
 		}
 
-		lastFoundTendencySg = tendencySg;
-		return tendency;
+		// Check the last tendency after exhausting all moves
+		if (currentTendencyFirstSg != null && currentTendencySg != null) {
+			double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
+			if (width >= 2.00) {
+				lastFoundTendencySg = currentTendencySg;
+				return currentTendencyMv;
+			}
+		}
+
+		lastFoundTendencySg = null;
+		return null;
 	}
 
 	public void logTendency() {
