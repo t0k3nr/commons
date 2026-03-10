@@ -32,6 +32,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	protected BigDecimal LOWNRGY_N_WT_THRESHOLD = new BigDecimal(-6);
 	protected BigDecimal LOWNRGY_P_WT1_THRESHOLD = new BigDecimal(-30);
 	protected BigDecimal LOWNRGY_P_WT_THRESHOLD = new BigDecimal(6);
+	protected double MIN_TENDENCY_WIDTH = 2.0;
 
 	// ========== Validity type labels (6 chars, right-aligned) ==========
 
@@ -243,7 +244,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 				} else {
 					// Breaking move — check width of current tendency
 					double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-					if (width >= 2.00) {
+					if (width >= MIN_TENDENCY_WIDTH) {
 						lastFoundTendencySg = currentTendencySg;
 						return currentTendencyMv;
 					}
@@ -268,7 +269,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		// Check the last tendency after exhausting all moves
 		if (currentTendencyFirstSg != null && currentTendencySg != null) {
 			double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-			if (width >= 2.00) {
+			if (width >= MIN_TENDENCY_WIDTH) {
 				lastFoundTendencySg = currentTendencySg;
 				return currentTendencyMv;
 			}
@@ -572,6 +573,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public void setLOWNRGY_N_WT_THRESHOLD(BigDecimal v) { this.LOWNRGY_N_WT_THRESHOLD = v; }
 	public void setLOWNRGY_P_WT1_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT1_THRESHOLD = v; }
 	public void setLOWNRGY_P_WT_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT_THRESHOLD = v; }
+	public void setMIN_TENDENCY_WIDTH(double v) { this.MIN_TENDENCY_WIDTH = v; }
 
 	// ========== Alignment metrics ==========
 
