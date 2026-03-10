@@ -197,11 +197,13 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	 *   1. Skip any SP, SN, ST at the top.
 	 *   2. Track currentTendencyFirstSg (highest) and currentTendencySg (lowest)
 	 *      while descending through same-side moves (AP/BP/RP/XP or AN/BN/RN/XN).
-	 *   3. Stop when encountering SP/SN/ST or an opposite-side move.
-	 *   4. Check width = firstSg.getIndex() / currentSg.getIndex() >= 2.00.
+	 *   3. Stop when encountering SP/SN/ST, an opposite-side move, or a same-side
+	 *      move whose |highestWt| < 80% of the previous sg's |highestWt|.
+	 *   4. Check width = firstSg.getIndex() / currentSg.getIndex() >= MIN_TENDENCY_WIDTH.
 	 *   5. If rejected, resume from the breaking move and repeat.
 	 */
 	private StatGranularity lastFoundTendencySg = null;
+	private static final BigDecimal TENDENCY_WT_DROP_THRESHOLD = new BigDecimal("0.80");
 
 	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
 		boolean skippingStalls = true;
@@ -209,6 +211,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		StatGranularity currentTendencyFirstSg = null;
 		StatGranularity currentTendencySg = null;
 		StatVO currentTendencyMv = null;
+		BigDecimal prevHighestWtAbs = null;
 
 		for (StatGranularity sg : moves.descendingKeySet()) {
 			if (sg.compareTo(GRANULARITY_FROM) < 0 || sg.compareTo(GRANULARITY_UNTIL) > 0) continue;
@@ -234,13 +237,38 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 				currentTendencySg = sg;
 				currentTendencyMv = mv;
 				positiveSide = isPositive;
+				prevHighestWtAbs = mv.getHighestWt() != null ? mv.getHighestWt().abs() : null;
 			} else {
 				// In a tendency — check if this move continues it
 				boolean sameSide = (positiveSide && isPositive) || (!positiveSide && isNegative);
 
 				if (sameSide) {
+					// Check highestWt drop: if |highestWt| < 80% of previous sg, break tendency
+					BigDecimal currentHighestWtAbs = mv.getHighestWt() != null ? mv.getHighestWt().abs() : null;
+					if (prevHighestWtAbs != null && currentHighestWtAbs != null
+							&& currentHighestWtAbs.compareTo(prevHighestWtAbs.multiply(TENDENCY_WT_DROP_THRESHOLD)) < 0) {
+						// Treat as a breaking move
+						double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
+						if (width >= MIN_TENDENCY_WIDTH) {
+							lastFoundTendencySg = currentTendencySg;
+							return currentTendencyMv;
+						}
+						currentTendencyFirstSg = null;
+						currentTendencySg = null;
+						currentTendencyMv = null;
+						positiveSide = null;
+						prevHighestWtAbs = null;
+						// This same-side move with low wt starts a new tendency
+						currentTendencyFirstSg = sg;
+						currentTendencySg = sg;
+						currentTendencyMv = mv;
+						positiveSide = isPositive;
+						prevHighestWtAbs = currentHighestWtAbs;
+						continue;
+					}
 					currentTendencySg = sg;
 					currentTendencyMv = mv;
+					prevHighestWtAbs = currentHighestWtAbs != null ? currentHighestWtAbs : prevHighestWtAbs;
 				} else {
 					// Breaking move — check width of current tendency
 					double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
@@ -253,6 +281,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					currentTendencySg = null;
 					currentTendencyMv = null;
 					positiveSide = null;
+					prevHighestWtAbs = null;
 					if (isStall) {
 						skippingStalls = true;
 						continue;
@@ -262,6 +291,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					currentTendencySg = sg;
 					currentTendencyMv = mv;
 					positiveSide = isPositive;
+					prevHighestWtAbs = mv.getHighestWt() != null ? mv.getHighestWt().abs() : null;
 				}
 			}
 		}

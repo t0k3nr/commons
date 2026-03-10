@@ -157,7 +157,7 @@ Search all moves, starting from the biggest granularity. When all moves (stats) 
 Skip any SP, SN, ST found on the top of the list. 
 
 - When you find a first granularity that is either AP, BP, RP, XP, AN, BN, RN, XN keep track off it, let's call it currentTendencyFirstSg.
-- keep descending through consecutive granularities of the same side (AP/BP/RP/XP or AN/BN/RN/XN) and store to currentTendencySg, and stop without storing when you encounter SP/SN/ST or an opposite-side move.
+- keep descending through consecutive granularities of the same side (AP/BP/RP/XP or AN/BN/RN/XN) and store to currentTendencySg, and stop without storing when you encounter SP/SN/ST or an opposite-side move or if still the same-side move and the highestWt is lower (absolutie value) than 80% of the previous sg.
 
 The currentTendencySg is the lowest granularity that is either AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST, or granularity from the opposite side.
 
