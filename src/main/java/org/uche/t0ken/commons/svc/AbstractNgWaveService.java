@@ -203,7 +203,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	 *   5. If rejected, resume from the breaking move and repeat.
 	 */
 	private StatGranularity lastFoundTendencySg = null;
-	private static final BigDecimal TENDENCY_WT_DROP_THRESHOLD = new BigDecimal("0.80");
+	protected BigDecimal TENDENCY_WT_DROP_THRESHOLD = new BigDecimal("0.80");
 
 	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
 		boolean skippingStalls = true;
@@ -604,6 +604,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public void setLOWNRGY_P_WT1_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT1_THRESHOLD = v; }
 	public void setLOWNRGY_P_WT_THRESHOLD(BigDecimal v) { this.LOWNRGY_P_WT_THRESHOLD = v; }
 	public void setMIN_TENDENCY_WIDTH(double v) { this.MIN_TENDENCY_WIDTH = v; }
+	public void setTENDENCY_WT_DROP_THRESHOLD(BigDecimal v) { this.TENDENCY_WT_DROP_THRESHOLD = v; }
 
 	// ========== Alignment metrics ==========
 
