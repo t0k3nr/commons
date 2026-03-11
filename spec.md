@@ -142,15 +142,17 @@ D4OVER D9.6:RN wt:-6.7622419 highestWt:-20.8890015 wt1: -52.3222729 diff:2.85762
 -- Local Alignment - width:    2.35 - distance:    466,500 ⚠️️
   STLD M1.0:SN wt:-0.7167646 highestWt:-1.0904788 wt1: 46.1705264 diff:-1.5018574 LH HL @2026-03-02T16:14:19.183337Z
 
-## Tendency
+## Tendencies
 
-### Find Tendency
+### Find Tendencies
 
-The tendency granularity is calculated by the inject() method.
+The tendency granularities are calculated by the inject() method.
 
-Rule for selecting the tendency:
+We keep a list of tendency granularities and their width, as explained below.
 
-Search all moves, starting from the biggest granularity. When all moves (stats) have been processed, if no tendency with width >= 2.00 has been found, tendency is null.
+Rule for selecting the tendencies:
+
+Search all moves, starting from the biggest granularity. When all moves (stats) have been processed, stop.
 
 --- begin find a tendency ---
 
@@ -163,23 +165,26 @@ The currentTendencySg is the lowest granularity that is either AP, BP, RP, XP, A
 
 Now calculate the currentTendencyWidth of the currentTendency, which is currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex().
 
-If currentTendencyWidth < 2.00, ignore this tendency and resume searching from the move that broke it (the SP/SN/ST or opposite-side move that ended the current tendency).
+keep the result (tendency, width) in the list of tendency granularities and their width.
 
 --- end find a tendency ---
 
-Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you find a tendency with currentTendencyWidth >= 2.00 (in which case the tendency is currentTendencySg)
+Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you reach the end of the moves.
 
 ### Logging of Tendency
 
 independant logging method public void logTendency()
 
-"TENDENCY:" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
+"TENDENCY" + <index> + "(" +  <width> + ")" +  ":" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
 
-TENDENCY: 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+Example (2 tendencies found, start with index 0):
+
+TENDENCY0(3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+TENDENCY1(1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
 
 ## Signals
 
-A tendency is used as a pivot for signalling.
+The first tendency from the list with width >= 2.00 is used as a pivot for signalling. If no tendency has width >= 2.00, no signal is generated.
 
 ### Condition for triggering a BUY
 
