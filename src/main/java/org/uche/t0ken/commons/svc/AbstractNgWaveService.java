@@ -60,6 +60,18 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		}
 	}
 
+	public static class TendencyEntry {
+		public final StatVO stat;
+		public final double width;
+		public final StatGranularity sg;
+
+		TendencyEntry(StatVO stat, double width, StatGranularity sg) {
+			this.stat = stat;
+			this.width = width;
+			this.sg = sg;
+		}
+	}
+
 	// ========== Memory Persistence of alignments ==========
 
 	private final Object alignmentLock = new Object();
@@ -67,6 +79,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	private List<List<List<ValidEntry>>> persistedSellCombinedAlignments = new ArrayList<>();
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
+	private List<TendencyEntry> persistedTendencies = new ArrayList<>();
 	private StatVO persistedTendency = null;
 	private StatGranularity persistedTendencySg = null;
 
@@ -111,9 +124,19 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		boolean buyHasEnabler = !buyEnablerCAs.isEmpty();
 		boolean sellHasEnabler = !sellEnablerCAs.isEmpty();
 
-		// Step 5: Find Tendency (single scan of all moves)
-		StatVO tendency = findTendency(moves);
-		StatGranularity tendencySg = lastFoundTendencySg;
+		// Step 5: Find Tendencies (single scan of all moves, collect all candidates)
+		List<TendencyEntry> tendencies = findTendencies(moves);
+
+		// Signal tendency: first entry with width >= MIN_TENDENCY_WIDTH
+		StatVO tendency = null;
+		StatGranularity tendencySg = null;
+		for (TendencyEntry te : tendencies) {
+			if (te.width >= MIN_TENDENCY_WIDTH) {
+				tendency = te.stat;
+				tendencySg = te.sg;
+				break;
+			}
+		}
 
 		// Store as persistent variables (synchronized for concurrent access by logAlignments)
 		synchronized (alignmentLock) {
@@ -121,6 +144,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			persistedSellCombinedAlignments = sellCombined;
 			persistedBuyHasEnabler = buyHasEnabler;
 			persistedSellHasEnabler = sellHasEnabler;
+			persistedTendencies = tendencies;
 			persistedTendency = tendency;
 			persistedTendencySg = tendencySg;
 		}
@@ -192,20 +216,21 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	// ========== Tendency ==========
 
 	/*
-	 * Find the tendency from the moves map (descending order = biggest first).
+	 * Find all tendencies from the moves map (descending order = biggest first).
+	 * Collects every tendency candidate (regardless of width) into a list.
 	 * Iterates through "find a tendency" blocks:
 	 *   1. Skip any SP, SN, ST at the top.
 	 *   2. Track currentTendencyFirstSg (highest) and currentTendencySg (lowest)
 	 *      while descending through same-side moves (AP/BP/RP/XP or AN/BN/RN/XN).
 	 *   3. Stop when encountering SP/SN/ST, an opposite-side move, or a same-side
 	 *      move whose |highestWt| < 80% of the previous sg's |highestWt|.
-	 *   4. Check width = firstSg.getIndex() / currentSg.getIndex() >= MIN_TENDENCY_WIDTH.
-	 *   5. If rejected, resume from the breaking move and repeat.
+	 *   4. Store (tendency, width, sg) in the result list.
+	 *   5. Resume from the breaking move and repeat until all moves exhausted.
 	 */
-	private StatGranularity lastFoundTendencySg = null;
 	protected BigDecimal TENDENCY_WT_DROP_THRESHOLD = new BigDecimal("0.80");
 
-	private StatVO findTendency(NavigableMap<StatGranularity, StatVO> moves) {
+	private List<TendencyEntry> findTendencies(NavigableMap<StatGranularity, StatVO> moves) {
+		List<TendencyEntry> result = new ArrayList<>();
 		boolean skippingStalls = true;
 		Boolean positiveSide = null; // null=undetermined, true=SELL(positive), false=BUY(negative)
 		StatGranularity currentTendencyFirstSg = null;
@@ -247,17 +272,9 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					BigDecimal currentHighestWtAbs = mv.getHighestWt() != null ? mv.getHighestWt().abs() : null;
 					if (prevHighestWtAbs != null && currentHighestWtAbs != null
 							&& currentHighestWtAbs.compareTo(prevHighestWtAbs.multiply(TENDENCY_WT_DROP_THRESHOLD)) < 0) {
-						// Treat as a breaking move
+						// Store current tendency candidate
 						double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-						if (width >= MIN_TENDENCY_WIDTH) {
-							lastFoundTendencySg = currentTendencySg;
-							return currentTendencyMv;
-						}
-						currentTendencyFirstSg = null;
-						currentTendencySg = null;
-						currentTendencyMv = null;
-						positiveSide = null;
-						prevHighestWtAbs = null;
+						result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
 						// This same-side move with low wt starts a new tendency
 						currentTendencyFirstSg = sg;
 						currentTendencySg = sg;
@@ -270,13 +287,10 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 					currentTendencyMv = mv;
 					prevHighestWtAbs = currentHighestWtAbs != null ? currentHighestWtAbs : prevHighestWtAbs;
 				} else {
-					// Breaking move — check width of current tendency
+					// Breaking move — store current tendency candidate
 					double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-					if (width >= MIN_TENDENCY_WIDTH) {
-						lastFoundTendencySg = currentTendencySg;
-						return currentTendencyMv;
-					}
-					// Reject: resume from this breaking move
+					result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
+					// Resume from this breaking move
 					currentTendencyFirstSg = null;
 					currentTendencySg = null;
 					currentTendencyMv = null;
@@ -296,31 +310,28 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			}
 		}
 
-		// Check the last tendency after exhausting all moves
+		// Store the last tendency after exhausting all moves
 		if (currentTendencyFirstSg != null && currentTendencySg != null) {
 			double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-			if (width >= MIN_TENDENCY_WIDTH) {
-				lastFoundTendencySg = currentTendencySg;
-				return currentTendencyMv;
-			}
+			result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
 		}
 
-		lastFoundTendencySg = null;
-		return null;
+		return result;
 	}
 
 	public void logTendency() {
-		StatVO tendency;
+		List<TendencyEntry> tendencies;
 
 		synchronized (alignmentLock) {
-			tendency = persistedTendency;
+			tendencies = persistedTendencies;
 		}
 
-		if (tendency != null) {
-			SgMove mv = tendency.getMv();
+		for (int i = 0; i < tendencies.size(); i++) {
+			TendencyEntry te = tendencies.get(i);
+			SgMove mv = te.stat.getMv();
 			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
 			String emoji = isBuy ? "\uD83D\uDFE2" : "\uD83D\uDD34";
-			logger.info("TENDENCY: " + emoji + " " + tendency.toMoveString());
+			logger.info("TENDENCY" + i + "(" + String.format("%.2f", te.width) + "): " + emoji + " " + te.stat.toMoveString());
 		}
 	}
 
@@ -340,6 +351,10 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 
 	public boolean isSellHasEnabler() {
 		synchronized (alignmentLock) { return persistedSellHasEnabler; }
+	}
+
+	public List<TendencyEntry> getTendencies() {
+		synchronized (alignmentLock) { return persistedTendencies; }
 	}
 
 	public StatVO getTendency() {
