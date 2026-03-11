@@ -34,7 +34,7 @@ For BUY side a granularity is considered valid if:
 
 - LHHL: its SgMove is RN or XN AND (current wt low is increasing: higher than previous low (increasingLows is true))
 
-- OVER: its wt1 is oversold: lower than WAVETREND_OS
+- OVER: its wt1 is oversold: lower than WAVETREND_OS, and higherWt is < 2
 
 - D4OVER: its SgMove is AN, BN, XN, RN AND current wt low is increasing: higher than previous low (increasingLows is true) AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is oversold: lower than WAVETREND_OS
 
@@ -47,7 +47,7 @@ For BUY side a granularity is considered valid if:
 For SELL side a granularity is considered valid if:
 
 - LHHL: its SgMove is RP or XP AND (current wt high is decreasing: lower than previous high (decreasingHighs is true) )
-- OVER: its wt1 is overbought: higher than WAVETREND_OB
+- OVER: its wt1 is overbought: higher than WAVETREND_OB, and higherWt is > -2
 - D4OVER: its SgMove is AP, BP, XP, RP AND current wt high is decreasing: lower than previous high (decreasingHighs is true) AND granularity D4OVER_MIN_MUL to D4OVER_MAX_MUL times smaller is overbought: higher than WAVETREND_OB
 
 - STLD: its SgMove is SN, SP, ST and wt1 >= STALLED_P_THRESHOLD
@@ -156,18 +156,18 @@ Search all moves, starting from the biggest granularity. When all moves (stats) 
 
 Skip any SP, SN, ST found on the top of the list. 
 
-- When you find a first granularity that is either AP, BP, RP, XP, AN, BN, RN, XN keep track off it, let's call it currentTendencyFirstSg.
+- When you find a first granularity that is either AP, BP, RP, XP, AN, BN, RN, XN keep track off it, let's call it firstPassTendencyFirstSg. This value is set only for the first pass (first attempt of getting a tendency), unless there is a next pass and the next pass is from a different side, in which case firstPassTendencyFirstSg is reset.
 - keep descending through consecutive granularities of the same side (AP/BP/RP/XP or AN/BN/RN/XN) and store to currentTendencySg, and stop without storing when you encounter SP/SN/ST or an opposite-side move or if still the same-side move and the highestWt is lower (absolutie value) than 80% of the previous sg.
 
 The currentTendencySg is the lowest granularity that is either AP, BP, RP, XP, AN, BN, RN or XN before any SP, SN, ST, or granularity from the opposite side.
 
-Now calculate the currentTendencyWidth of the currentTendency, which is currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex().
+Now calculate the totalTendencyWidth of the currentTendency, which is firstPassTendencyFirstSg.getIndex() / currentTendencySg.getIndex().
 
-If currentTendencyWidth < 2.00, ignore this tendency and resume searching from the move that broke it (the SP/SN/ST or opposite-side move that ended the current tendency).
+If totalTendencyWidth < 2.00, ignore this tendency and resume searching from the move that broke it (the SP/SN/ST or opposite-side move that ended the current tendency).
 
 --- end find a tendency ---
 
-Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you find a tendency with currentTendencyWidth >= 2.00 (in which case the tendency is currentTendencySg)
+Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until totalTendencyWidth >= 2.00 (in which case the tendency is currentTendencySg)
 
 ### Logging of Tendency
 
