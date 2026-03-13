@@ -171,6 +171,19 @@ keep the result (tendency, width) in the list of tendency granularities and thei
 
 Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you reach the end of the moves.
 
+### Combined Width
+
+Each tendency has an additional indicator: the combined width.
+
+The combined width is calculated by chaining consecutive same-sign, non-X-based tendencies:
+
+- Start with tendency T0. If T0 is not X-based, look at the next tendency T1.
+- If T1 has the same sign as T0, then T1's combined width is T0.highestSg / T1.lowestSg.
+- If T1 is also not X-based, look at T2. If T2 has the same sign, then T2's combined width is T0.highestSg / T2.lowestSg.
+- Continue until the chain breaks (different sign, or end of list).
+
+The combined width always anchors to the first tendency's highestSg in the chain and extends to the current tendency's lowestSg. If a tendency is not part of any chain (e.g. it is the first tendency and is X-based, or the previous tendency has a different sign), its combined width equals its own width.
+
 ### Tendency Selection
 
 We will select a tendency from the found list of tendencies.
@@ -178,7 +191,7 @@ We will select a tendency from the found list of tendencies.
 Rules:
 
 - we start always from the highest statGranularity
-- we discard tendencies that have a width of less than 2.00 (configurable as a container variable)
+- we discard tendencies that have a combined width of less than 2.00 (configurable as a container variable)
 - if a tendency is not X based (XN, or XP) we go to the next tendency.
 
 The first found tendency that respect these rules is the selected tendency.
@@ -187,13 +200,22 @@ The first found tendency that respect these rules is the selected tendency.
 
 independant logging method public void logTendency()
 
-"TENDENCY" + <index> + "(" +  <width> + ")" +  ":" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
+"TENDENCY" + <index> + "(" +  <width> + "/" + <combinedWidth> + ")" +  ":" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
 
 Example (2 tendencies found, start with index 0). The check ✅ indicates this is the slected tendency.
 
 TENDENCIES ----------
-✅ TENDENCY0(3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
-   TENDENCY1(1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+✅ TENDENCY0(3.21/3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+   TENDENCY1(1.95/1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+
+Example (3 tendencies found, all same sign, T0 and T1 are non-X, T2 is X-based):
+
+TENDENCIES ----------
+   TENDENCY0(1.50/1.50): 🔴 H7.4:RP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+   TENDENCY1(1.75/3.00): 🔴 H4.2:BP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+✅ TENDENCY2(1.40/4.50): 🔴 H2.1:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+
+Here T0 (RP, non-X) starts the chain. T1 (BP, same sign, non-X) gets combined width = T0.highestSg / T1.lowestSg = 3.00. T2 (XP, same sign) gets combined width = T0.highestSg / T2.lowestSg = 4.50. T2 is selected because it is X-based.
 
 ## Signals
 

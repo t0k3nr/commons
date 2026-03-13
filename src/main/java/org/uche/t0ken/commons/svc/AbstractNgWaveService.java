@@ -64,11 +64,15 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		public final StatVO stat;
 		public final double width;
 		public final StatGranularity sg;
+		public final StatGranularity firstSg;
+		public double combinedWidth;
 
-		TendencyEntry(StatVO stat, double width, StatGranularity sg) {
+		TendencyEntry(StatVO stat, double width, StatGranularity sg, StatGranularity firstSg) {
 			this.stat = stat;
 			this.width = width;
 			this.sg = sg;
+			this.firstSg = firstSg;
+			this.combinedWidth = width;
 		}
 	}
 
@@ -128,13 +132,43 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		// Step 5: Find Tendencies (single scan of all moves, collect all candidates)
 		List<TendencyEntry> tendencies = findTendencies(moves);
 
-		// Signal tendency: first X-based entry with width >= MIN_TENDENCY_WIDTH
+		// Step 5b: Compute combined widths
+		int chainAnchorIdx = -1;
+		for (int i = 0; i < tendencies.size(); i++) {
+			TendencyEntry te = tendencies.get(i);
+			SgMove mv = te.stat.getMv();
+			boolean isX = (mv == SgMove.XP || mv == SgMove.XN);
+			boolean isPositive = (mv == SgMove.AP || mv == SgMove.BP || mv == SgMove.RP || mv == SgMove.XP);
+
+			if (chainAnchorIdx >= 0) {
+				TendencyEntry anchor = tendencies.get(chainAnchorIdx);
+				SgMove anchorMv = anchor.stat.getMv();
+				boolean anchorPositive = (anchorMv == SgMove.AP || anchorMv == SgMove.BP || anchorMv == SgMove.RP || anchorMv == SgMove.XP);
+
+				if (isPositive == anchorPositive) {
+					te.combinedWidth = (double) anchor.firstSg.getIndex() / te.sg.getIndex();
+					if (isX) {
+						chainAnchorIdx = -1;
+					}
+				} else {
+					te.combinedWidth = te.width;
+					chainAnchorIdx = isX ? -1 : i;
+				}
+			} else {
+				te.combinedWidth = te.width;
+				if (!isX) {
+					chainAnchorIdx = i;
+				}
+			}
+		}
+
+		// Signal tendency: first X-based entry with combinedWidth >= MIN_TENDENCY_WIDTH
 		StatVO tendency = null;
 		StatGranularity tendencySg = null;
 		int selectedIndex = -1;
 		for (int i = 0; i < tendencies.size(); i++) {
 			TendencyEntry te = tendencies.get(i);
-			if (te.width < MIN_TENDENCY_WIDTH) continue;
+			if (te.combinedWidth < MIN_TENDENCY_WIDTH) continue;
 			SgMove mv = te.stat.getMv();
 			if (mv == SgMove.XP || mv == SgMove.XN) {
 				tendency = te.stat;
@@ -281,7 +315,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 							&& currentHighestWtAbs.compareTo(prevHighestWtAbs.multiply(TENDENCY_WT_DROP_THRESHOLD)) < 0) {
 						// Store current tendency candidate
 						double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-						result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
+						result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg, currentTendencyFirstSg));
 						// This same-side move with low wt starts a new tendency
 						currentTendencyFirstSg = sg;
 						currentTendencySg = sg;
@@ -296,7 +330,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 				} else {
 					// Breaking move — store current tendency candidate
 					double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-					result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
+					result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg, currentTendencyFirstSg));
 					// Resume from this breaking move
 					currentTendencyFirstSg = null;
 					currentTendencySg = null;
@@ -320,7 +354,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		// Store the last tendency after exhausting all moves
 		if (currentTendencyFirstSg != null && currentTendencySg != null) {
 			double width = (double) currentTendencyFirstSg.getIndex() / currentTendencySg.getIndex();
-			result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg));
+			result.add(new TendencyEntry(currentTendencyMv, width, currentTendencySg, currentTendencyFirstSg));
 		}
 
 		return result;
@@ -345,7 +379,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
 			String emoji = isBuy ? "\uD83D\uDFE2" : "\uD83D\uDD34";
 			String prefix = (i == selectedIdx) ? "\u2705 " : "   ";
-			logger.info(prefix + "TENDENCY" + i + "(" + String.format("%.2f", te.width) + "): " + emoji + " " + te.stat.toMoveString());
+			logger.info(prefix + "TENDENCY" + i + "(" + String.format("%.2f", te.width) + "/" + String.format("%.2f", te.combinedWidth) + "): " + emoji + " " + te.stat.toMoveString());
 		}
 	}
 
