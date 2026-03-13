@@ -179,6 +179,7 @@ independant logging method public void logTendency()
 
 Example (2 tendencies found, start with index 0):
 
+TENDENCIES ----------
 TENDENCY0(3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
 TENDENCY1(1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
 

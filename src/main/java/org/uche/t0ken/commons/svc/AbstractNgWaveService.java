@@ -326,6 +326,9 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			tendencies = persistedTendencies;
 		}
 
+		if (!tendencies.isEmpty()) {
+			logger.info("TENDENCIES ----------");
+		}
 		for (int i = 0; i < tendencies.size(); i++) {
 			TendencyEntry te = tendencies.get(i);
 			SgMove mv = te.stat.getMv();
