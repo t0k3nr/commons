@@ -80,6 +80,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	private boolean persistedBuyHasEnabler = false;
 	private boolean persistedSellHasEnabler = false;
 	private List<TendencyEntry> persistedTendencies = new ArrayList<>();
+	private int persistedSelectedTendencyIndex = -1;
 	private StatVO persistedTendency = null;
 	private StatGranularity persistedTendencySg = null;
 
@@ -127,13 +128,18 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 		// Step 5: Find Tendencies (single scan of all moves, collect all candidates)
 		List<TendencyEntry> tendencies = findTendencies(moves);
 
-		// Signal tendency: first entry with width >= MIN_TENDENCY_WIDTH
+		// Signal tendency: first X-based entry with width >= MIN_TENDENCY_WIDTH
 		StatVO tendency = null;
 		StatGranularity tendencySg = null;
-		for (TendencyEntry te : tendencies) {
-			if (te.width >= MIN_TENDENCY_WIDTH) {
+		int selectedIndex = -1;
+		for (int i = 0; i < tendencies.size(); i++) {
+			TendencyEntry te = tendencies.get(i);
+			if (te.width < MIN_TENDENCY_WIDTH) continue;
+			SgMove mv = te.stat.getMv();
+			if (mv == SgMove.XP || mv == SgMove.XN) {
 				tendency = te.stat;
 				tendencySg = te.sg;
+				selectedIndex = i;
 				break;
 			}
 		}
@@ -145,6 +151,7 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			persistedBuyHasEnabler = buyHasEnabler;
 			persistedSellHasEnabler = sellHasEnabler;
 			persistedTendencies = tendencies;
+			persistedSelectedTendencyIndex = selectedIndex;
 			persistedTendency = tendency;
 			persistedTendencySg = tendencySg;
 		}
@@ -322,8 +329,11 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 	public void logTendency() {
 		List<TendencyEntry> tendencies;
 
+		int selectedIdx;
+
 		synchronized (alignmentLock) {
 			tendencies = persistedTendencies;
+			selectedIdx = persistedSelectedTendencyIndex;
 		}
 
 		if (!tendencies.isEmpty()) {
@@ -334,7 +344,8 @@ public abstract class AbstractNgWaveService implements WaveInterface {
 			SgMove mv = te.stat.getMv();
 			boolean isBuy = (mv == SgMove.AN || mv == SgMove.BN || mv == SgMove.RN || mv == SgMove.XN);
 			String emoji = isBuy ? "\uD83D\uDFE2" : "\uD83D\uDD34";
-			logger.info("TENDENCY" + i + "(" + String.format("%.2f", te.width) + "): " + emoji + " " + te.stat.toMoveString());
+			String prefix = (i == selectedIdx) ? "\u2705 " : "   ";
+			logger.info(prefix + "TENDENCY" + i + "(" + String.format("%.2f", te.width) + "): " + emoji + " " + te.stat.toMoveString());
 		}
 	}
 
