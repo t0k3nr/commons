@@ -171,26 +171,39 @@ keep the result (tendency, width) in the list of tendency granularities and thei
 
 Repeat --- begin find a tendency --- ... --- end find a tendency --- from the resume point until you reach the end of the moves.
 
+### Tendency Selection
+
+We will select a tendency from the found list of tendencies.
+
+Rules:
+
+- we start always from the highest statGranularity
+- we discard tendencies that have a width of less than 2.00 (configurable as a container variable)
+- if a tendency is not X based (XN, or XP) we go to the next tendency.
+
+The first found tendency that respect these rules is the selected tendency.
+
 ### Logging of Tendency
 
 independant logging method public void logTendency()
 
 "TENDENCY" + <index> + "(" +  <width> + ")" +  ":" + " 🔴 " if SELL or " 🟢 " if BUY + mv.toMoveString()
 
-Example (2 tendencies found, start with index 0):
+Example (2 tendencies found, start with index 0). The check ✅ indicates this is the slected tendency.
 
-TENDENCY0(3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
-TENDENCY1(1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+TENDENCIES ----------
+✅ TENDENCY0(3.21): 🔴 H7.4:XP wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
+   TENDENCY1(1.95): 🟢 H1.1:XN wt:2.6169966 highestWt:14.927918 wt1: 55.4698196 diff:-6.4814050 HH HL @2026-03-05T18:13:30.125298Z
 
 ## Signals
 
-The first tendency from the list with width >= 2.00 is used as a pivot for signalling. If no tendency has width >= 2.00, no signal is generated.
+The selected tendency from the list is used as a pivot for signalling. If no tendency is selected, no signal is generated.
 
 ### Condition for triggering a BUY
 
 #### if tendency is valid for BUY side (see Validity definition above)
 
-- there must exist a **single** Combined Alignment from BUY side that is ENABLER and that includes the current tendency;
+- there must exist a **single** Combined Alignment from BUY side that is ENABLER and that includes the selected tendency;
 OR
 
 - there must exist a **single** Combined Alignment from BUY side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.
@@ -203,7 +216,7 @@ OR
 
 #### if tendency is valid for SELL side (see Validity definition above)
 
-- there must exist a **single** Combined Alignment from SELL side that is ENABLER and that includes the current tendency;
+- there must exist a **single** Combined Alignment from SELL side that is ENABLER and that includes the selected tendency;
 OR
 
 - there must exist a **single** Combined Alignment from SELL side that is ENABLER and has its largest granularity distant from maximum 5.00x (multiplier on granularity duration, configurable in a container variable) from the granularity of the tendency.
